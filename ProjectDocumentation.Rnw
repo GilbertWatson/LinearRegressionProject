@@ -1,0 +1,13 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+Institutional Population:
+- Title IV participating
+- US only
+- Carnegie: Research, Doctoral, Baccalaureate categories
+- Has Full-Time first time undergraduates
+- at least one program not offered through distance education
+
+\end{document}
