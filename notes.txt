@@ -4,3 +4,4 @@ CSV_11242013-1012: parent/child response status, imputation
 CSV_11242013-212: reponse status enrollment
 CSV_11242013-226: grand total awards/degrees by race ethnicity gender age
 CSV_11242013-284: undergraduate totals, cohorts, and financial aid stats
+CSV_11242013-284: more totals (undergradute, full fall cohorts) 
