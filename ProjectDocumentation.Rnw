@@ -3,6 +3,8 @@
 \begin{document}
 \SweaveOpts{concordance=TRUE}
 
+Data from 2010 survey
+
 Institutional Population:
 - Title IV participating
 - US only
