@@ -1,0 +1,21 @@
+CSV_11242013-145  :   scholarship data, housing, by income partition, campus
+CSV_11242013-126  :   total degrees by campus (program?) by race, ethnicity, gender
+CSV_11242013-1012 :   parent/child response status, imputation
+CSV_11242013-212  :   reponse status enrollment
+CSV_11242013-226  :   grand total awards/degrees by race ethnicity gender age
+CSV_11242013-284  :   undergraduate totals, cohorts, and financial aid stats
+CSV_11242013-284  :   more totals (undergradute, full fall cohorts) aid amounts and counts mainly
+CSV_11242013-31   :   degree totals by type of degree
+CSV_11242013-372  :   institution categories, codes, including carnegies and degree granting status, also state codes
+CSV_11242013-406  :   12 month unduplicated counts
+CSV_11242013-424  :   average net price by student aid categories
+CSV_11242013-446  :   percentages recieving and averages for first-time full time undergraduates
+CSV_11242013-542  :   most popular items (i think)
+CSV_11242013-593  :   percent admitted and admissions yeild
+CSV_11242013-609  :   total price and total price by living situation
+CSV_11242013-632  :   numbers and averages of student aid by income and living situation
+CSV_11242013-656  :   numbers of degrees offered by type (level not program)
+CSV_11242013-766  :   response status for student aid variables
+CSV_11242013-786  :   degree counts by level
+CSV_11242013-939  :   degree counts by gender race ethnicity
+CSV_11242013-961  :   headcounts by enrollement type
