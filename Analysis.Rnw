@@ -57,6 +57,16 @@ Institutional Population:
 \item{} at least one program not offered through distance education
 \end{enumerate}
 
+<<loaddata>>=
+data <- read.csv("CSV_1242013-33.csv")
+
+#remove id variables
+
+
+#automatic variable selection:
+fullmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=data)
+@
+
 
 %-------------------------------------------
 \section{System Information}
