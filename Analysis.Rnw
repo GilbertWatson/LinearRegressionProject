@@ -1,0 +1,69 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{times}
+\usepackage{enumerate}
+
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+
+%------------------------------------------------------------
+% newcommand
+%------------------------------------------------------------
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rexpression}[1]{\texttt{#1}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+%------------------------------------------------------------
+\title{Regression Analysis of Higher Education Outcomes}
+%------------------------------------------------------------
+\author{Gilbert Watson}
+\date{Monday, November 25th, 2013}
+
+\SweaveOpts{highlight=TRUE, tidy=TRUE, keep.space=TRUE, keep.blank.space=FALSE, keep.comment=TRUE}
+\SweaveOpts{prefix.string=Fig}
+
+
+\maketitle
+\tableofcontents
+
+%-------------------------------------------
+\section{The Data}
+%--------------------------------------------
+
+Data from 2010 NCES survey
+
+Institutional Population:
+\begin{enumerate}[a)]
+\item{} Title IV participating
+\item{} US only
+\item{} Carnegie: Research, Doctoral, Baccalaureate categories
+\item{} Has Full-Time first time undergraduates
+\item{} at least one program not offered through distance education
+\end{enumerate}
+
+
+%-------------------------------------------
+\section{System Information}
+%--------------------------------------------
+
+<<sessionInfo>>=
+sessionInfo();
+@ 
+
+\end{document}
