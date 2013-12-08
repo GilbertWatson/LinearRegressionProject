@@ -61,10 +61,38 @@ Institutional Population:
 data <- read.csv("CSV_1242013-33.csv")
 
 #remove id variables
+ids <- c(
+"HD2011.Data.Feedback.Report.comparison.group.category.created.by.NCES", 
+"HD2011.Data.Feedback.Report.comparison.group.category.created.by.NCES",
+"HD2011.Postsecondary.and.Title.IV.institution.indicator",
+"HD2011.Degree.granting.status",
+"year",
+"institution.name",
+"unitid",
+"HD2011.State.abbreviation",
+"HD2011.Level.of.institution",
+"HD2011.Data.Feedback.Report...Institution.submitted.a..custom.comparison.group",
+"HD2011.Tribal.college",
+"XSTUFACR")
 
+gradrates <- setdiff(names(data)[union(grep(".Graduation.rate..",names(data),fixed=T),grep(".Grauduation.rate..",names(data),fixed=T))],c("DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"))
+
+row.names(data) <- paste0(as.character(data$institution.name),as.character(data$HD2011.FIPS.state.code))
+data <- data[,setdiff(names(data),c(ids,gradrates))]
+
+#missing data assessment
+missing <- apply(data,2,function(x) {return(sum(is.na(x)))})
+mis <- names(missing)[missing > 283]
+data <- data[,setdiff(names(data),c(mis))]
+
+#tests
+test <- apply(data.tmp,2,unique)
+test2 <- unlist(lapply(test,length))
+
+data.tmp = na.omit(data)
 
 #automatic variable selection:
-fullmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=data)
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
 @
 
 
