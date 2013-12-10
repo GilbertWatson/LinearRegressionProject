@@ -54,7 +54,8 @@ Institutional Population:
 \item{} US only
 \item{} Carnegie: Research, Doctoral, Baccalaureate categories
 \item{} Has Full-Time first time undergraduates
-\item{} at least one program not offered through distance education
+\item{} At least one program not offered through distance education
+\item{} Only Public and Not for Profit Institutions 
 \end{enumerate}
 
 <<loaddata>>=
@@ -75,48 +76,79 @@ ids <- c(
 "HD2011.Tribal.college",
 "XSTUFACR")
 
-gradrates <- setdiff(names(data)[union(grep(".Graduation.rate..",names(data),fixed=T),grep(".Grauduation.rate..",names(data),fixed=T))],c("DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"))
+#remove responses except the ones you want
+gradrates <- setdiff(names(data)[union(grep(".Graduation.rate..",names(data),fixed=T),grep(".Graudation.rate..",names(data),fixed=T))],c("DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"))
 
-row.names(data) <- paste0(as.character(data$institution.name),as.character(data$HD2011.FIPS.state.code))
-data <- data[,setdiff(names(data),c(ids,gradrates))]
+#remove response codes
+response <- names(data)[grep("^X",names(data))]
+
+#add ids to rows
+row.names(data) <- paste0(as.character(data$institution.name)," : ",as.character(data$HD2011.FIPS.state.code))
+#remove ids and gradrates
+data <- data[,setdiff(names(data),c(ids,gradrates,response))]
+
+#remove for profit institutions
 data <- data[(data$HD2011.Sector.of.institution != "Private for-profit, 4-year or above"),]
+
+#clean financial variables
+mergeGASBFASB <- function(GASB) {
+  start <- data[,c(GASB)]
+  try(fasb <- data[,gsub("GASB","FASB",GASB)],silent=T)
+  data <- start
+  try(data[(is.na(data))] <- fasb[(is.na(data))],silent=T)
+  return(data)
+}
+
+newfinancials <- as.data.frame(sapply(names(data)[grep("..GASB.",names(data),fixed=T)],mergeGASBFASB))
+names(newfinancials) <- gsub("..GASB.","..MERGE",names(newfinancials),fixed=T)
+
+#remove old financials from dataset
+data <- data[,setdiff(names(data),names(data)[grepl("(\\.\\.GASB\\.)|(\\.\\.FASB\\.)",names(data))])]
+
+#add new financials
+data <- cbind(data,newfinancials)
+
+#remove single factors
+test <- apply(data,2,unique)
+test2 <- unlist(lapply(test,length))
+singlefactors <- names(which(test2 == 1))
+data <- data[,setdiff(names(data),singlefactors)]
 
 #missing data assessment
 missing <- apply(data,2,function(x) {return(sum(is.na(x)))})
-mis <- names(missing)[missing > 218]
 
-#other selected drops
-other <- c("SFA1011_RV.Average.amount.of.other.student.loan.aid.received.by.full.time.first.time.undergraduates",
-  "DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12")
+if(!file.exists("CleanData.csv")) {
+  write.csv(data,file="CleanData.csv",row.names=F)
+}
+@
+
+%-------------------------------------------
+\section{Analysis}
+%--------------------------------------------
+
+<<analysis>>=
+data[is.na(data)] <- 0
+
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data)
+
+library(leaps)
+xx<-model.matrix(fullmodel)[,-1]
+rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which removals make matrix full rank
+xm <- xx[,-which(rankifremoved == max(rankifremoved))] #remove that stuff
+models <- regsubsets(x=xm[,1:5],
+                     y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
+                     method="backward",
+                     nbest=10, # get all combinations of predictors
+                     really.big=T)
+
+leaps.obj <- leaps:::leaps.setup(x=xm,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,nbest=25,)
+models <- leaps:::leaps.exhaustive(leaps.obj,really.big=T)
+
 
 #get rid of those schools that didn't respond to the latest questions
-data.tmp <-  data[,setdiff(names(data),c(mis,other))]
-data.tmp2 <- na.omit(data.tmp)
-data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
-
-#missing data assessment
-missing <- apply(data.tmp,2,function(x) {return(sum(is.na(x)))})
-
-#remove single factors
-test <- apply(data.tmp2,2,unique)
-test2 <- unlist(lapply(test,length))
-singlefactors <- names(which(test2 == 1))
-data.tmp2 <- data.tmp2[,setdiff(names(data.tmp2),singlefactors)]
-
-#automatic variable selection:
-fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp2)
-
-require(MASS)
-require(leaps)
-
-# get predictor matrix
-x<-model.matrix(fullmodel)[,-1]
-# get bic for every subset regression
-models <- regsubsets(x=x,
-                     y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
-                     method="exhaustive",
-                     nbest=50, # get all combinations of predictors
-                     really.big=T)
+# data.tmp <-  data[,setdiff(names(data),c(mis,other))]
+# data.tmp2 <- na.omit(data.tmp)
+# data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
 @
 
 
