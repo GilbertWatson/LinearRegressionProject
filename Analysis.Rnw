@@ -122,27 +122,153 @@ if(!file.exists("CleanData.csv")) {
 }
 @
 
+Let's create some derived variables to lessen the effect of highly correlated variables (in other words, reduce multicolinearity).
+
+<<derivedvariablescolinearity>>=
+#derive some variables
+derived <- NULL
+
+#men women admission and yeild
+derived$men.women.admitted.differential <- data$DRVIC2011_RV.Percent.admitted...men - data$DRVIC2011_RV.Percent.admitted...women
+derived$men.women.admission.yeild.differential <- data$DRVIC2011_RV.Admissions.yield...men - data$DRVIC2011_RV.Admissions.yield...women
+derived$men.women.admission.yeild.full.time.differential <- data$DRVIC2011_RV.Admissions.yield...full.time.men - data$DRVIC2011_RV.Admissions.yield...full.time.women
+derived$men.women.admission.yeild.part.time.differential <- data$DRVIC2011_RV.Admissions.yield...part.time.men - data$DRVIC2011_RV.Admissions.yield...full.time.women
+derived$full.part.admission.yeild.differential <- data$DRVIC2011_RV.Admissions.yield...full.time - data$DRVIC2011_RV.Admissions.yield...part.time
+
+#fees
+derived$tuition.change.2008.2011 <- (data$DRVIC2011_RV.Tuition.and.fees..2010.11 - data$DRVIC2011_RV.Tuition.and.fees..2008.09)/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$tuition.change.2009.2010 <- (data$DRVIC2011_RV.Tuition.and.fees..2010.11 - data$DRVIC2011_RV.Tuition.and.fees..2009.10)/data$DRVIC2011_RV.Tuition.and.fees..2009.10
+derived$in.state.out.state.on.campus.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12
+derived$in.state.out.state.off.campus.family.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12
+# derived$in.state.out.state.off.campus.no.family.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12
+
+#enrollment
+derived$percent.full.time.enrollment <- data$DRVEF2011_RV.Full.time.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.part.time.enrollment <- data$DRVEF2011_RV.Part.time.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.undergraduate.enrollment <- data$DRVEF2011_RV.Undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.undergraduate.enrollment <- data$DRVEF2011_RV.First.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.transfer.ugrad.enrollment <- data$DRVEF2011_RV.Transfer.in.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.continuing.ugrad.degree.enrollment <- data$DRVEF2011_RV.Continuing.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.nondegree.ugrad.enrollment <- data$DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.graduate.enrollment <- data$DRVEF2011_RV.Graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.full.time.undergrad.enrollment <- data$DRVEF2011_RV.Full.time.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.full.time.ugrad.enrollment <- data$DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.first.time.part.time.ugrad.enrollment <- data$DRVEF2011_RV.Part.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.graduate.full.time.enrollment <- data$DRVEF2011_RV.Full.time.graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.graduate.part.time.enrollment <- data$DRVEF2011_RV.Part.time.graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+derived$percent.first.time.full.time.ugrads.of.all.ugrads <- data$DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Undergraduate.enrollment
+
+#staff
+derived$percent.instruction.research.public.staff <- data$DRVHR2011_RV.Instruction.research.and.public.service.FTE.staff/data$DRVHR2011_RV.Total.FTE.staff
+derived$percent.admin.staff <- data$DRVHR2011_RV.Executive.administrative.and.managerial.FTE..staff/data$DRVHR2011_RV.Total.FTE.staff
+derived$percent.nonprofessional.staff <- data$DRVHR2011_RV.Non.professional.FTE.staff/data$DRVHR2011_RV.Total.FTE.staff
+
+#salary differentials
+derived$percent.prof.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...professors - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+derived$percent.associate.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...associate.professors - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+derived$percent.assistant.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...assistant.professors - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+derived$percent.instructor.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...instructors - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+derived$percent.lecturer.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...lecturers - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+derived$percent.no.academic.rank.salary <- (data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...No.academic.rank - data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks)/data$DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...all.ranks
+
+#aid
+derived$percent.average.aid.total.tuition <- data$SFA1011_RV.Average.amount.of.federal..state..local.or.institutional.grant.aid.received/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.aid.total.tuition.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.federal.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.student.loan.tuition.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.student.loan.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.federal.grant.tuition.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.other.federal.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.federal.loan.tuition.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.federal.student.loan.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.instition.aid.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.institutional.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+derived$percent.average.state.local.aid.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.state.local.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
+
+derived <- as.data.frame(derived)
+@
+
+
 %-------------------------------------------
 \section{Analysis}
 %--------------------------------------------
 
+Let's first pick some predictors for removal since the size of the full model is too large to conduct automated variable selection efficiently.
+
 <<analysis>>=
-data[is.na(data)] <- 0
+#everything has an interaction with response
+data.tmp <- data
+data.tmp[is.na(data.tmp)] <- 0
 
-fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data)
-
-library(leaps)
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
 xx<-model.matrix(fullmodel)[,-1]
+
+#cor method
+corr <- abs(cor(xx))
+library(reshape2)
+meltcorr <- melt(corr)
+candidates <- meltcorr[meltcorr$value > 0.9 & meltcorr$Var1 != meltcorr$Var2,]
+
+#list principal datafeilds from examining candidates
+principals <- c("DRVIC2011_RV.Percent.admitted...total",
+                "DRVIC2011_RV.Admissions.yield...total",
+                "DRVIC2011_RV.Tuition.and.fees..2010.11",
+                "DRVEF2011_RV.Total..enrollment",
+                "DRVEF2011_RV.Percent.of.undergraduate.enrollment.18.24",
+                "DRVEF2011_RV.Percent.of.undergraduate.enrollment..25.64",
+                meltcorr$Var2[grep("DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.",meltcorr$Var2)],
+                "DRVGR2011_RV.Transfer.out.rate..total.cohort",
+                meltcorr$Var2[grep("SFA1011_RV.Percent.of.full.time.first.time.undergraduates",meltcorr$Var2)],
+                "DRVHR2011_RV.Total.FTE.staff",
+                "DRVF2011_RV.Local.appropriations.as.a.percent.of.core.revenues..MERGE",
+                "DRVF2011_RV.Core.expenses..total.dollars..MERGE",
+                "DRVF2011_RV.Endowment.assets..year.end..per.FTE.enrollment..MERGE")
+
+others <- c("DRVEF2011_RV.Full.time..first.time..degree.certificate.seeking.undergraduates..GRS.Cohort..as.percent.of.all.undergraduates",
+            "EF2011D_RV.Current.year.GRS.cohort.as.a.percent.of.entering.class")
+
+derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
+  if (is.infinite(x)) {
+    return(0)
+  }
+  else {
+    return(x)
+  }
+} ))
+
+data.tmp <- cbind(data[,setdiff(names(data),c(setdiff(candidates$Var2,principals),others))],derived.tmp)
+data.archive <- data.tmp
+data.tmp[is.na(data.tmp)] <- 0
+
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
+xx<-model.matrix(fullmodel)[,-1]
+
+#cor method
+corr <- abs(cor(xx))
+library(reshape2)
+meltcorr <- melt(corr)
+candidates <- meltcorr[meltcorr$value > 0.9 & meltcorr$Var1 != meltcorr$Var2,]
+
+#rank method
 rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which removals make matrix full rank
 xm <- xx[,-which(rankifremoved == max(rankifremoved))] #remove that stuff
-models <- regsubsets(x=xm[,1:5],
-                     y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
-                     method="backward",
-                     nbest=10, # get all combinations of predictors
-                     really.big=T)
+xo <- xx[,which(rankifremoved == max(rankifremoved))] #what got removed
 
-leaps.obj <- leaps:::leaps.setup(x=xm,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,nbest=25,)
-models <- leaps:::leaps.exhaustive(leaps.obj,really.big=T)
+models <- regsubsets(x=xm,nbest=2,nvmax=25,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+
+test <- summary(models)$which[summary(models)$rss == min(summary(models)$rss),]
+testmodel <- lm(xo[,which(test == T)],fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total)
+
+@
+
+<<extrastuff>>=
+
+
+#leaps method
+# library(leaps)
+# models <- regsubsets(x=xm[,1:5],
+#                      y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
+#                      method="backward",
+#                      nbest=10, # get all combinations of predictors
+#                      really.big=T)
+# 
+# leaps.obj <- leaps:::leaps.setup(x=xm,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,nbest=25,)
+# models <- leaps:::leaps.exhaustive(leaps.obj,really.big=T)
 
 
 #get rid of those schools that didn't respond to the latest questions
@@ -150,7 +276,6 @@ models <- leaps:::leaps.exhaustive(leaps.obj,really.big=T)
 # data.tmp2 <- na.omit(data.tmp)
 # data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
 @
-
 
 %-------------------------------------------
 \section{System Information}
