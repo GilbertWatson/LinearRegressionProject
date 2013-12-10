@@ -112,10 +112,10 @@ require(leaps)
 # get predictor matrix
 x<-model.matrix(fullmodel)[,-1]
 # get bic for every subset regression
-models <- leaps(x=x,
+models <- regsubsets(x=x,
                      y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
-                     method="adjr2",
-                     nbest=15, # get all combinations of predictors
+                     method="exhaustive",
+                     nbest=50, # get all combinations of predictors
                      really.big=T)
 @
 
