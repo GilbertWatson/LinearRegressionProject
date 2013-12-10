@@ -254,6 +254,8 @@ models <- regsubsets(x=xm,nbest=2,nvmax=25,y=fullmodel$model$DRVGR2011_RV.Gradua
 test <- summary(models)$which[summary(models)$rss == min(summary(models)$rss),]
 testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xm[,which(test == T)])
 
+library(MASS)
+testmodel2 <- rlm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xm[,which(test == T)])
 @
 
 <<extrastuff>>=
