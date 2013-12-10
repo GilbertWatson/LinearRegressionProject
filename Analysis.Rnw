@@ -79,23 +79,32 @@ gradrates <- setdiff(names(data)[union(grep(".Graduation.rate..",names(data),fix
 
 row.names(data) <- paste0(as.character(data$institution.name),as.character(data$HD2011.FIPS.state.code))
 data <- data[,setdiff(names(data),c(ids,gradrates))]
+data <- data[(data$HD2011.Sector.of.institution != "Private for-profit, 4-year or above"),]
 
 #missing data assessment
 missing <- apply(data,2,function(x) {return(sum(is.na(x)))})
-mis <- names(missing)[missing > 283]
-data <- data[,setdiff(names(data),c(mis))]
+mis <- names(missing)[missing > 218]
+
+#other selected drops
+other <- c("SFA1011_RV.Average.amount.of.other.student.loan.aid.received.by.full.time.first.time.undergraduates",
+  "DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12")
 
 #get rid of those schools that didn't respond to the latest questions
-data.tmp = na.omit(data)
+data.tmp <-  data[,setdiff(names(data),c(mis,other))]
+data.tmp2 <- na.omit(data.tmp)
+data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
 
-#tests
-test <- apply(data.tmp,2,unique)
+#missing data assessment
+missing <- apply(data.tmp,2,function(x) {return(sum(is.na(x)))})
+
+#remove single factors
+test <- apply(data.tmp2,2,unique)
 test2 <- unlist(lapply(test,length))
 singlefactors <- names(which(test2 == 1))
-data.tmp <- data.tmp[,setdiff(names(data.tmp),singlefactors)]
+data.tmp2 <- data.tmp2[,setdiff(names(data.tmp2),singlefactors)]
 
 #automatic variable selection:
-fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp2)
 
 require(MASS)
 require(leaps)
@@ -103,11 +112,11 @@ require(leaps)
 # get predictor matrix
 x<-model.matrix(fullmodel)[,-1]
 # get bic for every subset regression
-# models <- regsubsets(x=x,
-#                      y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
-#                      method="exhaustive",
-#                      nbest=15, # get all combinations of predictors
-#                      really.big=T)
+models <- leaps(x=x,
+                     y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
+                     method="adjr2",
+                     nbest=15, # get all combinations of predictors
+                     really.big=T)
 @
 
 
