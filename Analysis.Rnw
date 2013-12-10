@@ -249,10 +249,10 @@ rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which r
 xm <- xx[,-which(rankifremoved == max(rankifremoved))] #remove that stuff
 xo <- xx[,which(rankifremoved == max(rankifremoved))] #what got removed
 
-models <- regsubsets(x=xm,nbest=2,nvmax=25,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+models <- regsubsets(x=xm,nbest=2,nvmax=25,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
 
 test <- summary(models)$which[summary(models)$rss == min(summary(models)$rss),]
-testmodel <- lm(xo[,which(test == T)],fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total)
+testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xm[,which(test == T)])
 
 @
 
