@@ -122,10 +122,71 @@ if(!file.exists("CleanData.csv")) {
 }
 @
 
+Let's do just a little bit of data cleaning to eliminate non responses.
+
+<<fixweirdos>>=
+#tution data for institutions without in-state, out of state distiction
+data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12)]                                                                             
+data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)]                                                                                  
+data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12)]                                                                              
+data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12)]                                                           
+data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12)]                                                              
+data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12)]                                                          
+data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12)]                                                              
+data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12)]                                                                
+data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12)]
+
+#graduate enrollment pcts for schools with no graduate enrollment
+data$anyGrads <- sapply(data$DRVEF2011_RV.Graduate.enrollment,function(x) {
+  if (x > 0) {
+    return(1)
+  }
+  if (x == 0) {
+    return(0)
+  }
+})
+
+#make all graduate percentages interaction terms
+data[,c("DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.American.Indian.or.Alaska.Native",                                                                     
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Asian",                                                                                                
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Black.or.African.American",                                                                            
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Hispanic.Latino",                                                                                      
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Native.Hawaiian.or.Other.Pacific.Islander",                                                            
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.White",                                                                                                
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.two.or.more.races",                                                                                    
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Race.ethnicity.unknown",                                                                               
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Nonresident.Alien",                                                                                    
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Asian.Native.Hawaiian.Pacific.Islander",                                                               
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.women")] <- apply(
+  data[,c("DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.American.Indian.or.Alaska.Native",                                                                     
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Asian",                                                                                                
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Black.or.African.American",                                                                            
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Hispanic.Latino",                                                                                      
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Native.Hawaiian.or.Other.Pacific.Islander",                                                            
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.White",                                                                                                
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.two.or.more.races",                                                                                    
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Race.ethnicity.unknown",                                                                               
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Nonresident.Alien",                                                                                    
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Asian.Native.Hawaiian.Pacific.Islander",                                                               
+"DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.women")],
+  c(1,2),
+  function(x) {
+    if(is.na(x)) {
+      return(0)
+    }
+    else {
+      return(x)
+    }
+  })
+
+#create a variable for open admissions schools or schools that don't admit a gender
+# ???? to do ?????
+@
+
 Let's create some derived variables to lessen the effect of highly correlated variables (in other words, reduce multicolinearity).
 
 <<derivedvariablescolinearity>>=
-#derive some variables
+#derive some variables with care taken not to introduce linear dependencies
 derived <- NULL
 
 #men women admission and yeild
@@ -140,22 +201,17 @@ derived$tuition.change.2008.2011 <- (data$DRVIC2011_RV.Tuition.and.fees..2010.11
 derived$tuition.change.2009.2010 <- (data$DRVIC2011_RV.Tuition.and.fees..2010.11 - data$DRVIC2011_RV.Tuition.and.fees..2009.10)/data$DRVIC2011_RV.Tuition.and.fees..2009.10
 derived$in.state.out.state.on.campus.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12
 derived$in.state.out.state.off.campus.family.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12
-# derived$in.state.out.state.off.campus.no.family.differential <- (data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12 - data$DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12)/data$DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12
 
 #enrollment
 derived$percent.full.time.enrollment <- data$DRVEF2011_RV.Full.time.enrollment/data$DRVEF2011_RV.Total..enrollment
-# derived$percent.part.time.enrollment <- data$DRVEF2011_RV.Part.time.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.undergraduate.enrollment <- data$DRVEF2011_RV.Undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.first.time.undergraduate.enrollment <- data$DRVEF2011_RV.First.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.first.time.transfer.ugrad.enrollment <- data$DRVEF2011_RV.Transfer.in.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.first.time.continuing.ugrad.degree.enrollment <- data$DRVEF2011_RV.Continuing.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
-derived$percent.first.time.nondegree.ugrad.enrollment <- data$DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
-# derived$percent.graduate.enrollment <- data$DRVEF2011_RV.Graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.first.time.nondegree.ugrad.enrollment <- data$DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.full.time.undergrad.enrollment <- data$DRVEF2011_RV.Full.time.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.first.time.full.time.ugrad.enrollment <- data$DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
-# derived$percent.first.time.part.time.ugrad.enrollment <- data$DRVEF2011_RV.Part.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Total..enrollment
-derived$percent.graduate.full.time.enrollment <- data$DRVEF2011_RV.Full.time.graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
-# derived$percent.graduate.part.time.enrollment <- data$DRVEF2011_RV.Part.time.graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
+# derived$percent.graduate.full.time.enrollment <- data$DRVEF2011_RV.Full.time.graduate.enrollment/data$DRVEF2011_RV.Total..enrollment
 derived$percent.first.time.full.time.ugrads.of.all.ugrads <- data$DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment/data$DRVEF2011_RV.Undergraduate.enrollment
 
 #staff
@@ -183,45 +239,47 @@ derived$percent.average.state.local.aid.first.time.ugrad <- data$SFA1011_RV.Aver
 derived <- as.data.frame(derived)
 @
 
-
 %-------------------------------------------
 \section{Analysis}
 %--------------------------------------------
 
 Let's first pick some predictors for removal since the size of the full model is too large to conduct automated variable selection efficiently.
 
-<<analysis>>=
-#everything has an interaction with response
+<<initialmodel>>=
+#everything has an interaction with response, just so we can assess possible correlations in the data
 data.tmp <- data
-data.tmp[is.na(data.tmp)] <- 0
 
-fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
-xx<-model.matrix(fullmodel)[,-1]
-
-#cor method
-corr <- abs(cor(xx))
-library(reshape2)
-meltcorr <- melt(corr)
-candidates <- meltcorr[meltcorr$value > 0.9 & meltcorr$Var1 != meltcorr$Var2,]
-
-#list principal datafeilds from examining candidates
-principals <- c("DRVIC2011_RV.Percent.admitted...total",
-                "DRVIC2011_RV.Admissions.yield...total",
-                "DRVIC2011_RV.Tuition.and.fees..2010.11",
-                "DRVEF2011_RV.Total..enrollment",
-                "DRVEF2011_RV.Percent.of.undergraduate.enrollment.18.24",
-                "DRVEF2011_RV.Percent.of.undergraduate.enrollment..25.64",
-                meltcorr$Var2[grep("DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.",meltcorr$Var2)],
-                "DRVGR2011_RV.Transfer.out.rate..total.cohort",
-                meltcorr$Var2[grep("SFA1011_RV.Percent.of.full.time.first.time.undergraduates",meltcorr$Var2)],
-                "DRVHR2011_RV.Total.FTE.staff",
-                "DRVF2011_RV.Local.appropriations.as.a.percent.of.core.revenues..MERGE",
-                "DRVF2011_RV.Core.expenses..total.dollars..MERGE",
-                "DRVF2011_RV.Endowment.assets..year.end..per.FTE.enrollment..MERGE")
-
+#list other variables that have little meaning for some observations (specific to survey, not to observational units)
 others <- c("DRVEF2011_RV.Full.time..first.time..degree.certificate.seeking.undergraduates..GRS.Cohort..as.percent.of.all.undergraduates",
-            "EF2011D_RV.Current.year.GRS.cohort.as.a.percent.of.entering.class")
+            "EF2011D_RV.Current.year.GRS.cohort.as.a.percent.of.entering.class",
+            "HD2011.Institution.size.category.1")
 
+#remove variables that cause partitions in the data, leading to linear dependencies
+lindens <- c("DRVEF2011_RV.Adult.age..25.64..enrollment..full.time.graduate",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.students",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.graduate",
+             "HD2011.Control.of.institution",
+             "DRVEF2011_RV.Part.time.enrollment",
+             "DRVEF2011_RV.Graduate.enrollment",
+             "DRVEF2011_RV.Part.time.undergraduate.enrollment",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..graduate",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.undergraduate",
+             "DRVEF2011_RV.Part.time.graduate.enrollment",
+             "DRVEF2011_RV.Full.time.graduate.enrollment",
+             "DRVIC2011_RV.Admissions.yield...part.time",
+             "DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Full.time.nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12",
+             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12",
+             "DRVEF2011_RV.Continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Full.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.first.time.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.transfer.in.degree.certificate.seeking.undergraduate.enrollment",
+             "HD2011.FIPS.state.code") #creates linear dependencies with region codes, so let's start there first
+
+# replace infinte values (rates generated by dividing by zero) with zero (temporary matrix)
 derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
   if (is.infinite(x)) {
     return(0)
@@ -231,31 +289,131 @@ derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
   }
 } ))
 
-data.tmp <- cbind(data[,setdiff(names(data),c(setdiff(candidates$Var2,principals),others))],derived.tmp)
-data.archive <- data.tmp
-data.tmp[is.na(data.tmp)] <- 0
+# peice it all together with temporary data
+data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens))],derived.tmp) 
+data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial reponse based model
 
 fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
 xx<-model.matrix(fullmodel)[,-1]
 
-#cor method
-corr <- abs(cor(xx))
-library(reshape2)
-meltcorr <- melt(corr)
-candidates <- meltcorr[meltcorr$value > 0.9 & meltcorr$Var1 != meltcorr$Var2,]
-
-#rank method
+#confirm that model matrix is full rank and that all linear dependencies have been removed 
 rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which removals make matrix full rank
-xm <- xx[,-which(rankifremoved == max(rankifremoved))] #remove that stuff
-xo <- xx[,which(rankifremoved == max(rankifremoved))] #what got removed
+xm <- xx[,-which(rankifremoved == max(rankifremoved))] #should have nothing
+xo <- xx[,which(rankifremoved == max(rankifremoved))] #should have everything
 
-models <- regsubsets(x=xm,nbest=2,nvmax=25,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
-
-test <- summary(models)$which[summary(models)$rss == min(summary(models)$rss),]
-testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xm[,which(test == T)])
-
+#do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
+#exhaustive search takes a long long time with this many variables.
 library(MASS)
-testmodel2 <- rlm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xm[,which(test == T)])
+library(leaps)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
+
+
+# get best model from both forward, backwards, and sequential deletions
+whichmodelf <- summary(modelsf)$which[summary(modelsf)$rss == min(summary(modelsf)$rss),]
+whichmodelb <- summary(modelsb)$which[summary(modelsb)$rss == min(summary(modelsb)$rss),]
+whichmodels <- summary(modelss)$which[summary(modelss)$rss == min(summary(modelss)$rss),]
+inatleastone <- whichmodelf | whichmodelb | whichmodels
+
+testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xx[,which(inatleastone[2:length(inatleastone)] == T)])
+@
+
+<<fullmodel>>=
+#everything has an interaction with response, just so we can assess possible correlations in the data
+data.tmp <- data
+
+#list other variables that have little meaning for some observations (specific to survey, not to observational units)
+others <- c("DRVEF2011_RV.Full.time..first.time..degree.certificate.seeking.undergraduates..GRS.Cohort..as.percent.of.all.undergraduates",
+            "EF2011D_RV.Current.year.GRS.cohort.as.a.percent.of.entering.class",
+            "HD2011.Institution.size.category.1")
+
+#remove variables that cause partitions in the data, leading to linear dependencies
+lindens <- c("DRVEF2011_RV.Adult.age..25.64..enrollment..full.time.graduate",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.students",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.graduate",
+             "HD2011.Control.of.institution",
+             "DRVEF2011_RV.Part.time.enrollment",
+             "DRVEF2011_RV.Graduate.enrollment",
+             "DRVEF2011_RV.Part.time.undergraduate.enrollment",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..graduate",
+             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.undergraduate",
+             "DRVEF2011_RV.Part.time.graduate.enrollment",
+             "DRVEF2011_RV.Full.time.graduate.enrollment",
+             "DRVIC2011_RV.Admissions.yield...part.time",
+             "DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Full.time.nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.nondegree.certificate.seeking.undergraduate.enrollment",
+             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12",
+             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12",
+             "DRVEF2011_RV.Continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Full.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.first.time.degree.certificate.seeking.undergraduate.enrollment",
+             "DRVEF2011_RV.Part.time.transfer.in.degree.certificate.seeking.undergraduate.enrollment",
+             "HD2011.FIPS.state.code") #creates linear dependencies with region codes, so let's start there first
+
+# replace infinte values (rates generated by dividing by zero) with zero (temporary matrix)
+derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
+  if (is.infinite(x)) {
+    return(0)
+  }
+  else {
+    return(x)
+  }
+} ))
+
+# peice it all together with temporary data
+data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens))],derived.tmp)
+
+#get a list of the variables suggested from the steps above
+varsin <- attr(inatleastone,"names")[(inatleastone == T)]
+
+# add the factors back carefully (hand process)
+facs <- c("HD2011.Institution.size.category",
+          "HD2011.Geographic.region",
+          "HD2011.Degree.of.urbanization..Urban.centric.locale.",
+          "HD2011.Carnegie.Classification.2010..Undergraduate.Instructional.Program",
+          "HD2011.Carnegie.Classification.2010..Graduate.Instructional.Program",
+          "HD2011.Carnegie.Classification.2010..Undergraduate.Profile",
+          "HD2011.Carnegie.Classification.2010..Enrollment.Profile",
+          "HD2011.Carnegie.Classification.2010..Size.and.Setting",
+          "HD2011.Carnegie.Classification.2000")
+
+# and of course the response variable
+resp <- c("DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total")
+
+# get just the data we want in a matrix, but make sure we don't include variables with a high degree of missingness (since we modeled with 0's before)
+data.m <- data.tmp[,names(data.tmp)[names(data.tmp) %in% setdiff(c(varsin,facs,resp),names(missing)[missing > 300])]]
+
+# estimate the new model with these variables, getting rid of missing data in the process
+fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.m)
+xx<-model.matrix(fullmodel)[,-1]
+
+#do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
+#exhaustive search takes a long long time with this many variables.
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
+
+
+# get best model from both forward, backwards, and sequential deletions
+whichmodelf <- summary(modelsf)$which[summary(modelsf)$rss == min(summary(modelsf)$rss),]
+whichmodelb <- summary(modelsb)$which[summary(modelsb)$rss == min(summary(modelsb)$rss),]
+whichmodels <- summary(modelss)$which[summary(modelss)$rss == min(summary(modelss)$rss),]
+inatleastone <- whichmodelf | whichmodelb | whichmodels
+
+#create a new dataset to do exhaustive search on
+testdata <- as.data.frame(cbind(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,xx[,which(inatleastone[2:length(inatleastone)] == T)]))
+names(testdata)[1] <- "DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"
+testmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=testdata)
+xx <- model.matrix(testmodel)[,-1]
+
+#branch and prune selection
+models <- leaps(x=xx,y=testmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="adjr",nbest=3)
+
+#estimate the best model
+lastmodel <- lm(testdata$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xx[,which(models$which[(models$adjr2 == max(models$adjr2)),])])
 @
 
 <<extrastuff>>=
@@ -277,6 +435,33 @@ testmodel2 <- rlm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree
 # data.tmp <-  data[,setdiff(names(data),c(mis,other))]
 # data.tmp2 <- na.omit(data.tmp)
 # data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
+
+# #one more round of correlated variable removal before model estimation (maybe use)
+# corrmm <- cor(xx)
+# outs <- attr(corrmm,which="dimnames")[[2]][findCorrelation(corrmm,cutoff=0.99)] #maybe
+
+# fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
+# xx<- model.matrix(fullmodel)[,-1]
+# 
+# #find columns in model matrix that should be removed
+# library(caret)
+# corrmm <- cor(xx)
+# outs <- attr(corrmm,which="dimnames")[[2]][findCorrelation(corrmm)]
+# 
+# #list principal data feilds we would like to remove at a later stage
+# principals <- c("DRVIC2011_RV.Percent.admitted...total",
+#                 "DRVIC2011_RV.Admissions.yield...total",
+#                 "DRVIC2011_RV.Tuition.and.fees..2010.11",
+#                 "DRVEF2011_RV.Total..enrollment",
+#                 "DRVEF2011_RV.Percent.of.undergraduate.enrollment.18.24",
+#                 "DRVEF2011_RV.Percent.of.undergraduate.enrollment..25.64",
+#                 names(data.tmp)[grep("DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.",names(data.tmp))],
+#                 "DRVGR2011_RV.Transfer.out.rate..total.cohort",
+#                 names(data.tmp)[grep("SFA1011_RV.Percent.of.full.time.first.time.undergraduates",names(data.tmp))],
+#                 "DRVHR2011_RV.Total.FTE.staff",
+#                 "DRVF2011_RV.Local.appropriations.as.a.percent.of.core.revenues..MERGE",
+#                 "DRVF2011_RV.Core.expenses..total.dollars..MERGE",
+#                 "DRVF2011_RV.Endowment.assets..year.end..per.FTE.enrollment..MERGE")
 @
 
 %-------------------------------------------
