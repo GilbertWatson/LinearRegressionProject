@@ -493,7 +493,7 @@ if(!file.exists("MinimalData2.csv")) {
 %--------------------------------------------
 <<diagnostics>>=
 require(ggplot2)
-qplot(x=testdata$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,y=lastmodel$residuals,xlab="response",ylab="residuals")
+qplot(x=testdata$DRVIC2011_RV.Percent.admitted...total,y=lastmodel$residuals,xlab="response",ylab="residuals")
 @
 
 
