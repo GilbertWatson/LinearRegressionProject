@@ -147,10 +147,6 @@ data <- data[,setdiff(names(data),singlefactors)]
 
 #missing data assessment
 missing <- apply(data,2,function(x) {return(sum(is.na(x)))})
-
-if(!file.exists("CleanData.csv")) {
-  write.csv(data,file="CleanData.csv",row.names=F)
-}
 @
 
 <<fixweirdos,echo=FALSE>>=
@@ -348,6 +344,10 @@ derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
 
 # peice it all together with temporary data
 data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens,widelymissing))],derived.tmp) 
+#write to file
+if(!file.exists("CleanData.csv")) {
+  write.csv(data.tmp,file="CleanData.csv",row.names=F)
+}
 data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial reponse based model
 
 fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
@@ -475,6 +475,11 @@ lastdata <- as.data.frame(cbind(testmodel$model$DRVGR2011_RV.Graduation.rate...B
 names(lastdata)[1] <- "DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"
 lastmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=lastdata)
 summary(lastmodel)
+
+#write minimal data to file
+if(!file.exists("MinimalData.csv")) {
+  write.csv(data.m,file="MinimalData.csv",row.names=F)
+}
 @
 
 %-------------------------------------------
