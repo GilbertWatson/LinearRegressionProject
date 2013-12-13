@@ -1,0 +1,44 @@
+Call:
+lm(formula = DRVIC2011_RV.Percent.admitted...total ~ ., data = lastdata)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-51.708  -8.488  -0.088   8.543  49.160 
+
+Coefficients:
+                                                                                                                           Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                                                                                                               7.444e+01  5.694e+00  13.073  < 2e-16 ***
+DRVIC2011_RV.Admissions.yield...full.time                                                                                -1.507e-01  3.144e-02  -4.791 1.85e-06 ***
+``HD2011.Geographic.regionSoutheast AL AR FL GA KY LA MS NC SC TN VA WV``                                                -2.158e+00  1.003e+00  -2.152 0.031592 *  
+``HD2011.Degree.of.urbanization..Urban.centric.locale.Town: Remote``                                                      4.333e+00  1.377e+00   3.148 0.001685 ** 
+``HD2011.Carnegie.Classification.2010..Undergraduate.Instructional.ProgramProfessions focus, high graduate coexistence`` -1.442e+01  6.641e+00  -2.172 0.030064 *  
+``HD2011.Carnegie.Classification.2010..Size.and.SettingMedium four-year, primarily residential``                          4.832e+00  1.170e+00   4.128 3.89e-05 ***
+``HD2011.Carnegie.Classification.2010..Size.and.SettingVery small four-year, primarily residential``                     -6.131e+00  2.177e+00  -2.816 0.004932 ** 
+DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment                                     6.523e-03  1.065e-03   6.123 1.23e-09 ***
+DRVEF2011_RV.Percent.of.total.enrollment.that.are.Race.ethnicity.unknown                                                  9.719e-02  7.532e-02   1.290 0.197207    
+DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.Black.or.African.American                                      -9.944e-02  3.870e-02  -2.570 0.010294 *  
+DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.White                                                           1.984e-01  3.269e-02   6.071 1.68e-09 ***
+DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.Race.ethnicity.unknown                                               7.221e-02  4.404e-02   1.640 0.101317    
+DRVEF2011_RV.Adult.age..25.64..enrollment..all.students                                                                   1.174e-03  7.057e-04   1.663 0.096592 .  
+DRVEF2011_RV.Adult.age..25.64..enrollment..undergraduate                                                                  1.772e-03  8.488e-04   2.087 0.037081 *  
+DRVC2011_RV.Bachelor.s.degree                                                                                            -5.499e-03  9.944e-04  -5.530 3.89e-08 ***
+DRVC2011_RV.Master.s.degree                                                                                              -5.556e-03  1.932e-03  -2.875 0.004103 ** 
+DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.6.years..total                                                     -1.876e-01  4.176e-02  -4.493 7.65e-06 ***
+SFA1011_RV.Average.amount.of.institutional.grant.aid.received.by.full.time.first.time.undergraduates                     -6.477e-04  1.044e-04  -6.206 7.35e-10 ***
+SFA1011_RV.Percent.of.full.time.first.time.undergraduates.receiving.federal.student.loan.aid                              6.655e-02  3.092e-02   2.153 0.031527 *  
+DRVHR2011_RV.Average.salary.equated.to.9.month.contracts.of.full.time.instructional.staff...associate.professors         -1.788e-04  4.479e-05  -3.991 6.96e-05 ***
+DRVF2011_RV.Tuition.and.fees.as.a.percent.of.core.revenues..MERGE                                                         1.364e-01  2.693e-02   5.064 4.72e-07 ***
+DRVF2011_RV.Other.revenues.as.a.percent.of.core.revenues..MERGE                                                           1.207e-01  5.255e-02   2.297 0.021799 *  
+DRVF2011_RV.Research.expenses.as.a.percent.of.total.core.expenses..MERGE                                                  2.075e-01  6.070e-02   3.419 0.000649 ***
+DRVF2011_RV.Public.service.expenses.as.a.percent.of.total.core.expenses..MERGE                                            2.984e-01  1.113e-01   2.680 0.007453 ** 
+DRVF2011_RV.Instruction.expenses.per.FTE...MERGE                                                                         -2.160e-04  7.878e-05  -2.741 0.006205 ** 
+men.women.admitted.differential                                                                                          -2.001e-01  3.347e-02  -5.980 2.91e-09 ***
+percent.first.time.transfer.ugrad.enrollment                                                                             -5.676e+01  1.249e+01  -4.543 6.09e-06 ***
+percent.admin.staff                                                                                                       2.040e+01  7.329e+00   2.783 0.005463 ** 
+percent.average.federal.loan.tuition.first.time.ugrad                                                                    -4.237e+00  1.803e+00  -2.349 0.018964 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 12.99 on 1256 degrees of freedom
+Multiple R-squared:  0.4909,  Adjusted R-squared:  0.4796 
+F-statistic: 43.26 on 28 and 1256 DF,  p-value: < 2.2e-16
