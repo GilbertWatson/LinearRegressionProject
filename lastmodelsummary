@@ -1,0 +1,47 @@
+Call:
+lm(formula = DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total ~ 
+    ., data = lastdata)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-56.526  -3.734   0.257   4.326  78.386 
+
+Coefficients:
+                                                                                                                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                                                                                                           -2.843e+00  3.801e+00  -0.748 0.454550    
+DRVIC2011_RV.Tuition.and.fees..2009.10                                                                                 3.382e-04  4.852e-05   6.970 5.00e-12 ***
+``HD2011.Institution.size.categoryUnder 1,000``                                                                       -1.863e+00  8.792e-01  -2.119 0.034244 *  
+``HD2011.Geographic.regionMid East DE DC MD NJ NY PA``                                                                 1.765e+00  5.604e-01   3.150 0.001668 ** 
+``HD2011.Degree.of.urbanization..Urban.centric.locale.Rural: Distant``                                                -5.242e+00  1.354e+00  -3.871 0.000114 ***
+``HD2011.Carnegie.Classification.2010..Graduate.Instructional.ProgramSTEM dominant``                                  -3.375e+00  1.243e+00  -2.715 0.006719 ** 
+``HD2011.Carnegie.Classification.2010..Undergraduate.ProfileFull-time four-year, more selective, higher transfer-in``  5.002e+00  1.299e+00   3.851 0.000123 ***
+``HD2011.Carnegie.Classification.2010..Undergraduate.ProfileFull-time four-year, more selective, lower transfer-in``   6.657e+00  1.043e+00   6.384 2.38e-10 ***
+``HD2011.Carnegie.Classification.2010..Undergraduate.ProfileFull-time four-year, selective, higher transfer-in``       1.901e+00  6.993e-01   2.719 0.006633 ** 
+``HD2011.Carnegie.Classification.2010..Undergraduate.ProfileFull-time four-year, selective, lower transfer-in``        2.664e+00  7.616e-01   3.497 0.000485 ***
+``HD2011.Carnegie.Classification.2010..Undergraduate.ProfileMedium full-time four-year, inclusive``                   -2.722e+00  8.870e-01  -3.068 0.002195 ** 
+``HD2011.Carnegie.Classification.2010..Size.and.SettingLarge four-year, primarily nonresidential``                    -5.886e+00  1.125e+00  -5.230 1.97e-07 ***
+``HD2011.Carnegie.Classification.2010..Size.and.SettingMedium four-year, primarily nonresidential``                   -6.787e+00  9.617e-01  -7.058 2.73e-12 ***
+``HD2011.Carnegie.Classification.2010..Size.and.SettingSmall four-year, primarily nonresidential``                    -5.041e+00  1.054e+00  -4.785 1.90e-06 ***
+``HD2011.Carnegie.Classification.2010..Size.and.SettingSmall four-year, primarily residential``                       -3.238e+00  7.783e-01  -4.160 3.39e-05 ***
+``HD2011.Carnegie.Classification.2010..Size.and.SettingVery small four-year, primarily nonresidential``               -5.400e+00  1.860e+00  -2.904 0.003749 ** 
+DRVEF2011_RV.Undergraduate.enrollment                                                                                 -1.488e-03  1.962e-04  -7.582 6.36e-14 ***
+DRVEF2011_RV.First.time.degree.certificate.seeking.undergraduate.enrollment                                            1.088e-02  3.059e-03   3.558 0.000387 ***
+DRVEF2011_RV.Full.time.first.time.degree.certificate.seeking.undergraduate.enrollment                                 -9.373e-03  2.939e-03  -3.189 0.001462 ** 
+DRVEF2011_RV.Percent.of.total.enrollment.that.are.White                                                                6.280e-02  1.305e-02   4.812 1.66e-06 ***
+DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.Nonresident.Alien                                           -1.712e-01  6.867e-02  -2.494 0.012761 *  
+EF2011D_RV.Full.time.retention.rate..2011                                                                              6.257e-01  3.187e-02  19.633  < 2e-16 ***
+DRVEF2011_RV.Percent.of.undergraduate.enrollment.18.24                                                                 4.204e-02  2.083e-02   2.018 0.043788 *  
+DRVEF2011_RV.Percent.of.undergraduate.enrollment.over.65                                                               3.202e+00  7.107e-01   4.505 7.21e-06 ***
+DRVC2011_RV.Bachelor.s.degree                                                                                          6.520e-03  6.772e-04   9.628  < 2e-16 ***
+SFA1011_RV.Percent.of.full.time.first.time.undergraduates.receiving.Pell.grants                                       -1.221e-01  2.372e-02  -5.147 3.05e-07 ***
+DRVF2011_RV.Institutional.support.expenses.as.a.percent.of.total.core.expenses..MERGE                                 -1.071e-01  3.656e-02  -2.930 0.003453 ** 
+DRVF2011_RV.Endowment.assets..year.end..per.FTE.enrollment..MERGE                                                      1.014e-05  1.798e-06   5.636 2.12e-08 ***
+men.women.admission.yeild.full.time.differential                                                                      -1.402e-01  2.776e-02  -5.049 5.05e-07 ***
+percent.assistant.salary                                                                                              -1.152e+01  3.576e+00  -3.222 0.001303 ** 
+percent.average.student.loan.tuition.first.time.ugrad                                                                 -3.916e+00  1.073e+00  -3.651 0.000271 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 7.715 on 1321 degrees of freedom
+Multiple R-squared:  0.8589,  Adjusted R-squared:  0.8557 
+F-statistic:   268 on 30 and 1321 DF,  p-value: < 2.2e-16
