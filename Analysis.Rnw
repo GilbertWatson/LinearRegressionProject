@@ -46,6 +46,7 @@
 \section{The Data}
 %--------------------------------------------
 
+\subsection{Source:}
 Data from 2010 NCES survey
 
 Institutional Population:
@@ -55,10 +56,40 @@ Institutional Population:
 \item{} Carnegie: Research, Doctoral, Baccalaureate categories
 \item{} Has Full-Time first time undergraduates
 \item{} At least one program not offered through distance education
-\item{} Only Public and Not for Profit Institutions 
+\item{} Only Public and Not for Profit Institutions
 \end{enumerate}
 
-<<loaddata>>=
+\subsection{Cleaning:}
+Cleaning Steps required:
+\begin{enumerate}[a)]
+\item{} Removal of observation indicators.
+\item{} Removal of all variables associated with the response (5 year graduate rates) except for the one of interest.
+\item{} Removal of for-profit institutions.
+\item{} Merged financial variables that were reported in two separate fields by public and private institutions. GASB and FASB standards are quite similar and it appeared appropriate to use then concurrently.
+\item{} Removed variables that were the same for all observations (like degree granting status).
+\item{} Made fee fields for in-state, in-district partitions equal to total cost in cases where institutions did not report (largely because they are private institutions and the partition has no applicability).
+\item{} Made graduate demographic percentages 0 where missing (because the institution has no graduate population). Variable behaves like an interaction term with variable "anyGrads."
+\item{} TO DO: Merge admission and yeild rates for intitutions that do not report gender breakdowns because they do not admit a gender, or because they have open admissions policies. Figure out how to make that distinction.
+\item{} Create derived percentage and different variables for all variables that apply to alleviate obvious instances of high correlation simply due to levels. Care was taken not to introduce any linear dependencies when making these variables. This is why it may appear as some are omitted. Thier inclusion would simply fully define another variable.
+\item{} Removed a small subset of variables that do not have any applicability to the whole set of observations (data about a specific cohort tracked by the NCES survey).
+\item{} Removed variables that cause linear dependencies due to the full partition of another variable.
+\item{} Replaced infinite values in derived variables with 0 because we often mean that there is no change when we divide by zero.
+\end{enumerate}
+
+\subsection{Initial Model Formulation:}
+Initial Model Formulation:
+\begin{enumerate}[a)]
+\item{} Since we have so many variables, some sort of automated technique was required to build an initial model.
+\item{} First, we replace all missing values in the dataset with zero to eliminate reducing the number of observations, but only to get an initial, large model.
+\item{} We do forward, backwards, and sequential search for the best regression subset of up to 50 variables using the full model from this modified data. The reason we do this is because exhaustive search would take a prohibitively long time using this many predictors.
+\item{} We then use all predictors selected by any of these three search methods to build a full model on the original cleaned data (without missing data replaced).
+\item{} We then conduct the same sort of search as above for a reasonable set of predictors, this time searching for the best regression subset with a max of 20 variables.
+\item{} Using the all the predictors selected by the three methods, we are left with a model that can be exhaustively searched for the best subset (29 predictors). We are left with an initial model.
+\end{enumerate}
+
+Should we allow for a higher number of variables in the second forward, backwards, and sequential search?
+
+<<loaddata,echo=FALSE>>=
 data <- read.csv("CSV_1242013-33.csv")
 
 #remove id variables
@@ -122,9 +153,7 @@ if(!file.exists("CleanData.csv")) {
 }
 @
 
-Let's do just a little bit of data cleaning to eliminate non responses.
-
-<<fixweirdos>>=
+<<fixweirdos,echo=FALSE>>=
 #tution data for institutions without in-state, out of state distiction
 data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12)]                                                                             
 data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)] <- data$DRVIC2011_RV.Tuition.and.fees..2011.12[is.na(data$DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12)]                                                                                  
@@ -183,9 +212,7 @@ data[,c("DRVEF2011_RV.Percent.of.graduate.enrollment.that.are.American.Indian.or
 # ???? to do ?????
 @
 
-Let's create some derived variables to lessen the effect of highly correlated variables (in other words, reduce multicolinearity).
-
-<<derivedvariablescolinearity>>=
+<<derivedvariablescolinearity,echo=FALSE>>=
 #derive some variables with care taken not to introduce linear dependencies
 derived <- NULL
 
@@ -238,14 +265,9 @@ derived$percent.average.state.local.aid.first.time.ugrad <- data$SFA1011_RV.Aver
 
 derived <- as.data.frame(derived)
 @
+\subsection{Initial Model Results:}
 
-%-------------------------------------------
-\section{Analysis}
-%--------------------------------------------
-
-Let's first pick some predictors for removal since the size of the full model is too large to conduct automated variable selection efficiently.
-
-<<initialmodel>>=
+<<initialmodel,echo=FALSE>>=
 #everything has an interaction with response, just so we can assess possible correlations in the data
 data.tmp <- data
 
@@ -296,10 +318,10 @@ data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial re
 fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
 xx<-model.matrix(fullmodel)[,-1]
 
-#confirm that model matrix is full rank and that all linear dependencies have been removed 
-rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which removals make matrix full rank
-xm <- xx[,-which(rankifremoved == max(rankifremoved))] #should have nothing
-xo <- xx[,which(rankifremoved == max(rankifremoved))] #should have everything
+# #confirm that model matrix is full rank and that all linear dependencies have been removed 
+# rankifremoved <- sapply(1:ncol(xx), function (x) qr(xx[,-x])$rank) #find which removals make matrix full rank
+# xm <- xx[,-which(rankifremoved == max(rankifremoved))] #should have nothing
+# xo <- xx[,which(rankifremoved == max(rankifremoved))] #should have everything
 
 #do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
 #exhaustive search takes a long long time with this many variables.
@@ -319,7 +341,7 @@ inatleastone <- whichmodelf | whichmodelb | whichmodels
 testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xx[,which(inatleastone[2:length(inatleastone)] == T)])
 @
 
-<<fullmodel>>=
+<<fullmodel,fig=TRUE,results=verbatim,echo=FALSE>>=
 #everything has an interaction with response, just so we can assess possible correlations in the data
 data.tmp <- data
 
@@ -392,9 +414,9 @@ xx<-model.matrix(fullmodel)[,-1]
 
 #do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
 #exhaustive search takes a long long time with this many variables.
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=27,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=27,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=27,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions
@@ -413,56 +435,20 @@ xx <- model.matrix(testmodel)[,-1]
 models <- leaps(x=xx,y=testmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="adjr",nbest=3)
 
 #estimate the best model
-lastmodel <- lm(testdata$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xx[,which(models$which[(models$adjr2 == max(models$adjr2)),])])
+lastdata <- as.data.frame(cbind(testmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,xx[,which(models$which[(models$adjr2 == max(models$adjr2)),])]))
+names(lastdata)[1] <- "DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total"
+lastmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=lastdata)
+summary(lastmodel)
 @
 
-<<extrastuff>>=
-
-
-#leaps method
-# library(leaps)
-# models <- regsubsets(x=xm[,1:5],
-#                      y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,
-#                      method="backward",
-#                      nbest=10, # get all combinations of predictors
-#                      really.big=T)
-# 
-# leaps.obj <- leaps:::leaps.setup(x=xm,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,nbest=25,)
-# models <- leaps:::leaps.exhaustive(leaps.obj,really.big=T)
-
-
-#get rid of those schools that didn't respond to the latest questions
-# data.tmp <-  data[,setdiff(names(data),c(mis,other))]
-# data.tmp2 <- na.omit(data.tmp)
-# data.dropped <- data.tmp[!(row.names(data.tmp) %in% row.names(data.tmp2)),]
-
-# #one more round of correlated variable removal before model estimation (maybe use)
-# corrmm <- cor(xx)
-# outs <- attr(corrmm,which="dimnames")[[2]][findCorrelation(corrmm,cutoff=0.99)] #maybe
-
-# fullmodel <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~.,data=data.tmp)
-# xx<- model.matrix(fullmodel)[,-1]
-# 
-# #find columns in model matrix that should be removed
-# library(caret)
-# corrmm <- cor(xx)
-# outs <- attr(corrmm,which="dimnames")[[2]][findCorrelation(corrmm)]
-# 
-# #list principal data feilds we would like to remove at a later stage
-# principals <- c("DRVIC2011_RV.Percent.admitted...total",
-#                 "DRVIC2011_RV.Admissions.yield...total",
-#                 "DRVIC2011_RV.Tuition.and.fees..2010.11",
-#                 "DRVEF2011_RV.Total..enrollment",
-#                 "DRVEF2011_RV.Percent.of.undergraduate.enrollment.18.24",
-#                 "DRVEF2011_RV.Percent.of.undergraduate.enrollment..25.64",
-#                 names(data.tmp)[grep("DRVEF2011_RV.Percent.of.undergraduate.enrollment.that.are.",names(data.tmp))],
-#                 "DRVGR2011_RV.Transfer.out.rate..total.cohort",
-#                 names(data.tmp)[grep("SFA1011_RV.Percent.of.full.time.first.time.undergraduates",names(data.tmp))],
-#                 "DRVHR2011_RV.Total.FTE.staff",
-#                 "DRVF2011_RV.Local.appropriations.as.a.percent.of.core.revenues..MERGE",
-#                 "DRVF2011_RV.Core.expenses..total.dollars..MERGE",
-#                 "DRVF2011_RV.Endowment.assets..year.end..per.FTE.enrollment..MERGE")
+%-------------------------------------------
+\section{Diagnostics}
+%--------------------------------------------
+<<diagnostics>>=
+require(ggplot2)
+qplot(x=testdata$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,y=lastmodel$residuals,xlab="response",ylab="residuals")
 @
+
 
 %-------------------------------------------
 \section{System Information}
