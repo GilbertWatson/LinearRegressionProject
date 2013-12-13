@@ -346,7 +346,7 @@ derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
 data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens,widelymissing))],derived.tmp) 
 #write to file
 if(!file.exists("CleanData.csv")) {
-  write.csv(data.tmp,file="CleanData.csv",row.names=F)
+  write.csv(data.tmp,file="CleanData.csv",row.names=T)
 }
 data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial reponse based model
 
@@ -363,15 +363,15 @@ xx<-model.matrix(fullmodel)[,-1]
 #exhaustive search takes a long long time with this many variables.
 library(MASS)
 library(leaps)
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=40,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions
-whichmodelf <- summary(modelsf)$which[summary(modelsf)$rss == min(summary(modelsf)$rss),]
-whichmodelb <- summary(modelsb)$which[summary(modelsb)$rss == min(summary(modelsb)$rss),]
-whichmodels <- summary(modelss)$which[summary(modelss)$rss == min(summary(modelss)$rss),]
+whichmodelf <- summary(modelsf)$which[summary(modelsf)$bic == min(summary(modelsf)$bic),]
+whichmodelb <- summary(modelsb)$which[summary(modelsb)$bic == min(summary(modelsb)$bic),]
+whichmodels <- summary(modelss)$which[summary(modelss)$bic == min(summary(modelss)$bic),]
 inatleastone <- whichmodelf | whichmodelb | whichmodels
 
 testmodel <- lm(fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~xx[,which(inatleastone[2:length(inatleastone)] == T)])
@@ -450,15 +450,15 @@ xx<-model.matrix(fullmodel)[,-1]
 
 #do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
 #exhaustive search takes a long long time with this many variables.
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=26,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=26,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=26,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=23,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=23,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=23,y=fullmodel$model$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions
-whichmodelf <- summary(modelsf)$which[summary(modelsf)$rss == min(summary(modelsf)$rss),]
-whichmodelb <- summary(modelsb)$which[summary(modelsb)$rss == min(summary(modelsb)$rss),]
-whichmodels <- summary(modelss)$which[summary(modelss)$rss == min(summary(modelss)$rss),]
+whichmodelf <- summary(modelsf)$which[summary(modelsf)$bic == min(summary(modelsf)$bic),]
+whichmodelb <- summary(modelsb)$which[summary(modelsb)$bic == min(summary(modelsb)$bic),]
+whichmodels <- summary(modelss)$which[summary(modelss)$bic == min(summary(modelss)$bic),]
 inatleastone <- whichmodelf | whichmodelb | whichmodels
 
 #create a new dataset to do exhaustive search on
@@ -478,7 +478,7 @@ summary(lastmodel)
 
 #write minimal data to file
 if(!file.exists("MinimalData.csv")) {
-  write.csv(data.m,file="MinimalData.csv",row.names=F)
+  write.csv(data.m,file="MinimalData.csv",row.names=T)
 }
 @
 
