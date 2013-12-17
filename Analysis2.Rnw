@@ -476,6 +476,7 @@ if(!file.exists("MinimalData2.csv")) {
 \section{Diagnostics}
 %--------------------------------------------
 <<diagnostics>>=
+#residual plot
 require(ggplot2)
 qplot(x=testdata$DRVIC2011_RV.Tuition.and.fees..2010.11,y=lastmodel$residuals,xlab="response",ylab="residuals")
 @
