@@ -1,0 +1,158 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{times}
+\usepackage{enumerate}
+
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+
+%------------------------------------------------------------
+% newcommand
+%------------------------------------------------------------
+\newcommand{\scscst}{\scriptscriptstyle}
+\newcommand{\scst}{\scriptstyle}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rexpression}[1]{\texttt{#1}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{{\texttt{#1}}}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+%------------------------------------------------------------
+\title{Regression Analysis of Higher Education Outcomes}
+%------------------------------------------------------------
+\author{Gilbert Watson}
+\date{Monday, November 25th, 2013}
+
+\SweaveOpts{highlight=TRUE, tidy=TRUE, keep.space=TRUE, keep.blank.space=FALSE, keep.comment=TRUE}
+\SweaveOpts{prefix.string=Fig}
+
+
+\maketitle
+\tableofcontents
+
+%-------------------------------------------
+\section{Introduction}
+%-------------------------------------------
+
+Higher education is big business blah, blah, blah, blah.
+
+%-------------------------------------------
+\section{The Data}
+%-------------------------------------------
+
+\subsection{Raw Data}
+Data on five year graduate rates, tuition and fees, and other post-secondary institutional characteristics are available through the US Department of Education's National Center for Education Statistics (NCES). For this study, we chose to only consider data for those institutions that possess the following characteristics:
+
+\begin{enumerate}[a)]
+\item{} Title IV participating
+\item{} US only
+\item{} Carnegie Foundation ranking in a research, doctoral, or baccalaureate category
+\item{} The institution has at least some full-time undergraduates
+\item{} The institution has at least one program that is not offered through distance education
+\item{} No for-profit institutions, only public and not-for-profit
+\end{enumerate}
+
+The survey that collects this data is administered yearly, but for this study, we chose to only consider the cross section available from the 2010 survey. We do not intend to examine the time dynamics of institutional characteristics.
+
+The original dataset contains 1499 observational units and 320 variables. Variables contain data on characteristics such as admission rates, admission yeilds, tuition and other costs, student body demographics, graduation rates, averages and percentages of students recieving various types of aid, pay rates for different types of university faculty, and various institutional financials on a per faculty basis. In particular, this paper seeks to examine two of these variables relationships to the others - five year undergraduate graduation rates and 2010-2011 educational year tuition and fees. What institutional characteristics are associated with strong educational outcomes (a high graduation rate) and does this have any relationship to the institutional determinants of high cost? A quick examination would show that there is in fact a relationship. A scatter plot of five year graduation rates and tuition and fees shows the existence of a strong relationship, and beyond that a relationship that is bifurcated between private and public institutions. This isn't surprising. Elite educational institutions often cost more and often have higher graduation rates if for no other reason than they attract top notch students. There is a bit of self selction bias going on. This paper is not concerned with this relationship alone. We are concerned about the individual predictors associated with tuition and fees (of which graduate rates may be one) and the individual predictors of graduation rates. Are the predictors similar, or are they determined by wholy different factors when accounting for things like selectivity?
+
+<<sourceanalysis1,echo=FALSE,fig=TRUE,figs.only=TRUE>>=
+source('Analysis.R')
+require(ggplot2)
+q <- ggplot(aes(x=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,y=DRVIC2011_RV.Tuition.and.fees..2010.11,colour=HD2011.Control.of.institution),data=data)
+q + geom_point() + xlab("5 Year Graduation Rate") + ylab("Tuition and Fees (2010-2011)") + scale_colour_discrete(name="Institutional Control") + ggtitle("US Undergraduate Serving Institutions")
+@
+
+\subsection{Data Cleaning}
+
+Several steps were taken to clean the data prior to analysis. A full accounting of the steps taken is in the source code for this document, which will be made available on Github. A list of the high points which do concern the analysis follows:
+
+\begin{enumerate}[a)]
+\item{} Institutional identification variables were removed.
+\item{} A small collection of variables concerning a partitular cohort of students measured by NCES was removed.
+\item{} The small differences between FASB and GASB financial reporting methods for educational institutions are ignored and those variables are merged. These largely comprise per full-time equivalent institutional finance variables.
+\item{} In-state and out-of-state cost variables are merged for private institutions where they have no applicability
+\item{} Admission rates for institutions that only serve one gender were adjusted to zero for the appropriate gender. Additionally, a categorical variable indicating whether an institution serves males, females, or both was generated.
+\item{} One pair of variables that partitioned the data were removed to eliminate the possibility of linear dependence between columns. For example, percentage of students enrolled in non-degree programs was removed as a variable in the presence of full-time and part-time enrollment because all three would perfectly partition the total enrollment variable.
+\item{} Several variable transformations were preformed before analysis to eliminate obvious sources of colinearity. For example, the percentage of enrollment comprised of undergrads was generated to account for the fact that undergraduate enrollment and total enrollment are highly correlated. None of the original variables were removed and are still taken into consideration as predictors, but the transformations made seemed like obvious normalizations.
+\end{enumerate}
+
+%-------------------------------------------
+\section{Dimensionality Reduction}
+%-------------------------------------------
+
+319 potential predictors is a lot of variables to deal with. In the face of this, and without any qualitative understanding of the drivers behind graduation rates and tuition and fees, an automated variable selection method was used to reduce the dataset to a manageable number of predictors. For each response variable, the following steps were taken to reduce the dataset.
+
+\begin{enumerate}[1)]
+\item{} Variables closely related to the response were removed from the dataset. For example, in the case of graduation rates, 4 and 6 year graduation rates were removed when using the 5 year graduation rate as a response variable.
+\item{} All missing values in the dataset are replaced with zero to eliminate reducing the number of observations, but only to get an initial, large model.
+\item{} The full model with all remaining candidate predictors is estimated.
+\item{} Using the full model, forward, backward, and sequential automated variable selection algorithms are used to search for the best full model. Each method is was allowed to pick a set of up to 50 predictors which optimized model BIC. The union of these predictors is passed to the next step.
+\item{} All but those predictors proposed by the previous step are removed from the dataset. During this step, missing values are retained. A full model with those predictors remaining is estimated. Again, the three methods choose the best model availiable to the algorithm using BIC as a criterion. Each is allowed to consider models of up to 20 predictors. The union of these predictors is passed to the next step.
+\item{} Only those predictors selected by the previous step are retained in the dataset. An efficient branch-and-bound algorithm is used to search the remaining predictors for the best model. The criterion doesn't matter since the search is exhaustive. The predictors selected by this step are used as the initial step in modeling.
+\end{enumerate}
+
+The reason for using multiple stages of automated variable selection is that exhaustive search for the best model using just first order terms would be very computationally intensive. This method gives us a manageable number of predictors to begin model refinement. Even graphical search for potential predictors would have been difficult with so many potential variables. There would have been over fifty thousand paired scatter plots to consider.
+
+%-------------------------------------------
+\section{Regression Analysis: 5 Year Graduation Rates}
+%-------------------------------------------
+
+\subsection{Initial Model}
+
+<<gradrateinitial,echo=FALSE,results=tex>>=
+summ <- NULL
+summ$Min <- sapply(GradRate, min, na.rm=TRUE)
+summ$Median <- sapply(GradRate, median, na.rm=TRUE)
+summ$Mean <- sapply(GradRate, mean, na.rm=TRUE)
+summ$Max <- sapply(GradRate, max, na.rm=TRUE)
+summ <- as.data.frame(summ)
+require(xtable)
+print(xtable(summ,caption="Initial Data Set Summary Statistics"))
+@
+
+<<fullmodelgradate,echo=FALSE,results=tex>>=
+summ <- summary(lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate))
+print(xtable(summ,caption="Full Model Estimate Results"))
+@
+
+<<pairs,echo=FALSE,fig=TRUE,>>=
+require(reshape2)
+qdata <- melt(GradRate[setdiff(names(GradRate),c("Size.Under.1000",
+                     "Mid.East",
+                     "Distant.Degree.of.Urbanization",
+                     "UgradProfile.FullTime.MoreSelective.HighTransfer",
+                     "UgradProfile.FullTime.MoreSelective.LowTransfer",
+                     "UgradProfile.FullTime.Selective.HighTransfer",
+                     "UgradProfile.FullTime.Selective.LowTransfer",
+                     "UgradProfile.Medium.FullTime.Selective.Inclusive",
+                     "SizeSetting.Large.FourYear.NotResidential",
+                     "SizeSetting.Medium.FourYear.NotResidential",
+                     "SizeSetting.Small.FourYear.NotResidential",
+                     "SizeSetting.Small.FourYear.Residential",
+                     "SizeSetting.VSmall.FourYear,NotResidential"
+                     ))],id.vars=c("Five.Year.Bachelors.Graduation.Rate"))
+g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata)
+g + geom_point() + facet_wrap(~variable,scales="free")
+@
+
+<<blahblah>>=
+qplot(x=GradRate$Five.Year.Bachelors.Graduation.Rate,y=lastmodel$residuals,xlab="response",ylab="residuals")
+@
+
+
+
+
+\end{document}
