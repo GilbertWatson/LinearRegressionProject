@@ -363,11 +363,13 @@ derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
 
 # peice it all together with temporary data
 data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens,widelymissing))],derived.tmp) 
+widelymissing2 <- apply(data.tmp,2,function(x) {return(sum(is.na(x)))})
+widelymissing2 <- names(widelymissing2)[widelymissing2 > 100]
+data.tmp <- data.tmp[,setdiff(names(data.tmp),widelymissing2)]
 #write to file
 if(!file.exists("CleanData2.csv")) {
   write.csv(data.tmp,file="CleanData2.csv",row.names=T)
 }
-data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial reponse based model
 
 fullmodel <- lm(DRVIC2011_RV.Tuition.and.fees..2010.11~.,data=data.tmp)
 fmzeros_archive <- fullmodel
@@ -417,15 +419,13 @@ data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens))],derived.tmp)
 varsin <- attr(inatleastone,"names")[(inatleastone == T)]
 
 # add the factors back carefully (hand process)
-facs <- c("HD2011.Geographic.region",
-          "HD2011.Historically.Black.College.or.University",
+facs <- c("HD2011.Institution.size.category",
+          "HD2011.Geographic.region",
+          "HD2011.Sector.of.institution",
           "HD2011.Carnegie.Classification.2010..Undergraduate.Instructional.Program",
           "HD2011.Carnegie.Classification.2010..Graduate.Instructional.Program",
           "HD2011.Carnegie.Classification.2010..Undergraduate.Profile",
-          "HD2011.Carnegie.Classification.2010..Size.and.Setting",
           "HD2011.Carnegie.Classification.2000",
-          "HD2011.Institutional.category",
-          "HD2011.Sector.of.institution",
           "AdmitsGenders")
 
 # and of course the response variable
@@ -440,9 +440,9 @@ xx<-model.matrix(fullmodel)[,-1]
 
 #do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
 #exhaustive search takes a long long time with this many variables.
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=22,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=22,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=22,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions

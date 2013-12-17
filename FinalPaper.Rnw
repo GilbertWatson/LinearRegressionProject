@@ -87,6 +87,7 @@ Several steps were taken to clean the data prior to analysis. A full accounting 
 \item{} Admission rates for institutions that only serve one gender were adjusted to zero for the appropriate gender. Additionally, a categorical variable indicating whether an institution serves males, females, or both was generated.
 \item{} One pair of variables that partitioned the data were removed to eliminate the possibility of linear dependence between columns. For example, percentage of students enrolled in non-degree programs was removed as a variable in the presence of full-time and part-time enrollment because all three would perfectly partition the total enrollment variable.
 \item{} Several variable transformations were preformed before analysis to eliminate obvious sources of colinearity. For example, the percentage of enrollment comprised of undergrads was generated to account for the fact that undergraduate enrollment and total enrollment are highly correlated. None of the original variables were removed and are still taken into consideration as predictors, but the transformations made seemed like obvious normalizations.
+\item{} Variables that are missing for over 100 observations are removed from the dataset. This eliminates variables like the revenue from state appropriations since most private schools do not recieve state appropriations.
 \end{enumerate}
 
 %-------------------------------------------
@@ -97,7 +98,6 @@ Several steps were taken to clean the data prior to analysis. A full accounting 
 
 \begin{enumerate}[1)]
 \item{} Variables closely related to the response were removed from the dataset. For example, in the case of graduation rates, 4 and 6 year graduation rates were removed when using the 5 year graduation rate as a response variable.
-\item{} All missing values in the dataset are replaced with zero to eliminate reducing the number of observations, but only to get an initial, large model.
 \item{} The full model with all remaining candidate predictors is estimated.
 \item{} Using the full model, forward, backward, and sequential automated variable selection algorithms are used to search for the best full model. Each method is was allowed to pick a set of up to 50 predictors which optimized model BIC. The union of these predictors is passed to the next step.
 \item{} All but those predictors proposed by the previous step are removed from the dataset. During this step, missing values are retained. A full model with those predictors remaining is estimated. Again, the three methods choose the best model availiable to the algorithm using BIC as a criterion. Each is allowed to consider models of up to 20 predictors. The union of these predictors is passed to the next step.
@@ -112,6 +112,8 @@ The reason for using multiple stages of automated variable selection is that exh
 
 \subsection{Initial Model}
 
+After the initial data reduction effort described above, an initial model for five year undergraduate graduation rates results. The table below gives the summary statistics for the dataset underlying the model:
+
 <<gradrateinitial,echo=FALSE,results=tex>>=
 summ <- NULL
 summ$Min <- sapply(GradRate, min, na.rm=TRUE)
@@ -120,13 +122,18 @@ summ$Mean <- sapply(GradRate, mean, na.rm=TRUE)
 summ$Max <- sapply(GradRate, max, na.rm=TRUE)
 summ <- as.data.frame(summ)
 require(xtable)
-print(xtable(summ,caption="Initial Data Set Summary Statistics"))
+print(xtable(summ,caption=paste0("Summary Statistics For Dataset (n = ",length(GradRate[,1]),")")))
 @
 
+A table outlining the full model associated with this dataset follows:
+
 <<fullmodelgradate,echo=FALSE,results=tex>>=
+grfull <- lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate)
 summ <- summary(lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate))
-print(xtable(summ,caption="Full Model Estimate Results"))
+print(xtable(summ,caption=paste0("F = ",round(summ$fstatistic,4)[1]," (n = ",length(GradRate[,1])," on ",summ$df[2]," degrees of freedom)")))
 @
+
+The first thing we should do is examine scatter plots of the five year graduation rate with other, non-binary variables in the reduced dataset, just to get a sense of what is going on.
 
 <<pairs,echo=FALSE,fig=TRUE,>>=
 require(reshape2)
@@ -144,13 +151,151 @@ qdata <- melt(GradRate[setdiff(names(GradRate),c("Size.Under.1000",
                      "SizeSetting.Small.FourYear.Residential",
                      "SizeSetting.VSmall.FourYear,NotResidential"
                      ))],id.vars=c("Five.Year.Bachelors.Graduation.Rate"))
-g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata)
-g + geom_point() + facet_wrap(~variable,scales="free")
+group1 <- c("Tuition.Fees.2009.2010",
+                     "Tuition.Fees.2010.2011",
+            "Undergraduate.Enrollment",
+                     "First.Time.Certificate.Seeking.Ugrad.Enrollment",
+                     "First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment",
+                     "Percent.Total.Enrollment.White",
+                     "Full.Time.Retention.Rate.2011",
+                     "Bachelors.Degrees.Awarded")
+group2 <- c("Percent.First.Time.Full.Time.Ugrad.Pell.Grant.Recipients",
+                     "Investment.Return.As.Percent.Core.Revenue",
+                     "Endowment.Per.FTE.Enrollment",
+                     "Male.Female.Full.Time.Admission.Yeild.Difference",
+                     "Percent.First.Time.Transfer.Ugrad.Enrollment",
+                     "Assistant.Percentage.Full.Prof.Salary",
+                     "Percent.Average.Student.Loan.Of.Tuition.Ugrad")
+g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group1,])
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("")
 @
 
-<<blahblah>>=
-qplot(x=GradRate$Five.Year.Bachelors.Graduation.Rate,y=lastmodel$residuals,xlab="response",ylab="residuals")
+<<scatter2,echo=FALSE,fig=TRUE>>=
+g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group2,])
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("")
 @
+
+It is clear from this excersize that our full model has several serious problems. There are two pairs of variables that are clearly very collinear. "Tuition.Fees.2009.2010" and "Tuition.Fees.2010.2011" as well as "First.Time.Certificate.Seeking.Ugrad.Enrollment" and "First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment" are providing almost the same information to the model. This can be confirmed by computing the variance inflation factors for all the variables in the full model. Clearly one variable of each pair should be removed from the model.
+
+It is also clear from this table that "Undergraduate.Enrollment" and "Bachelor.Degrees.Awarded" are also causing collinearity issues. One would suspect that an intstitution with a large undergraduate enrollment would also have a large number of bachelor degrees awarded. One of these pair should likely be removed as well.
+
+<<vif,echo=FALSE,results=tex>>=
+library(car)
+vtable <- data.frame(Variable=names(vif(grfull)),VIF=vif(grfull))
+row.names(vtable) = NULL
+print(xtable(vtable))
+@
+
+Another obvious correction would be to include an indicator variable for public institutions back into the model. The scatter plot panel with tuition on the y axis and graduation rate on the x axis is just the same as our first scatter plot comparing the two. The is a very obvious interaction between tuition and an institution's identity as public or private.
+
+One more obvious correction would be to add a variable transformations for endowment per FTE. Earlier scatter plots indicate a diminishing relationship between this variable and graduation rates. An appropriate transform for endowment per FTE appears to be a log transformation.
+
+<<transforms,echo=FALSE,fig=TRUE>>=
+qplot(GradRate$Five.Year.Bachelors.Graduation.Rate,log(GradRate$Endowment.Per.FTE.Enrollment),xlab="Graduation Rate", ylab="Log(Endowment Per FTE Enrollment)")
+@
+
+Before making these corrections though, we have one larger problem. There are several indicators that the residuals are not normally distributed, likely due to outliers. A qq plot of the residuals suggests that they are distributed with heavy tails.
+
+<<qqplot,echo=FALSE,fig=TRUE>>=
+qplot(sample=grfull$residuals,stat="stat_qq")
+@
+
+\subsection{Outlier Removal}
+
+A histogram of the studentized deleted residuals would suggest that we have several outliers. After calculating the bonferroni critical value for outliers, we can assume that the following observations for five year graduation rate should be removed from the dataset. Note that I have set the $\alpha$ level at $\alpha = 0.10$ for the Bonferroni test.
+
+<<residuals,fig=TRUE,results=tex>>=
+library(MASS)
+stud.del.res <- studres(grfull)
+qplot(stud.del.res,xlab="Studentized Deleted Residuals",binwidth=0.05)
+alpha <- 0.1
+ct <- qt(1-alpha/(2*length(stud.del.res)),length(stud.del.res) - length(grfull$coefficients))
+groutliers <- which(abs(stud.del.res) > ct)
+print(xtable(data.frame(Institutions = rownames(GradRate)[which(abs(stud.del.res) > ct)])))
+@
+
+The predictor variables also have outliers. We use the hat matrix to find them:
+
+<<residualxes,results=tex>>=
+diagonal <- lm.influence(grfull)$hat
+threshold <- 2*(length(grfull$coefficients) - 1)/length(grfull$model$Five.Year.Bachelors.Graduation.Rate)
+xoutliers <- which(diagonal > threshold)
+print(xtable(data.frame(Institutions = rownames(GradRate)[xoutliers]),))
+@
+
+Now let's remove these from our full model and see if our residuals are more normally distributed.
+
+<<removeoutliers,results=tex>>=
+grfull_nouts <- lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate[-c(groutliers,xoutliers),setdiff(names(GradRate),c("SizeSetting.VSmall.FourYear.NotResidential"))])
+grfull_noutssumm <- summary(grfull_nouts)
+print(xtable(grfull_noutssumm,caption=paste0("F = ",round(grfull_noutssumm$fstatistic,4)[1]," (n = ",length(grfull_nouts$model[,1])," on ",grfull_noutssumm$df[2]," degrees of freedom)")))
+@
+
+<<qqplotnoouts,echo=FALSE,fig=TRUE>>=
+qplot(sample=grfull_nouts$residuals,stat="stat_qq")
+@
+
+It appears that our residuals are now normally distributed. Now we can make the apply corrections we noticed necessary in our initial model.
+
+<<addbackprivate,echo=FALSE>>=
+GradRate$Private <- sapply(row.names(GradRate),function(x) {
+  want <- as.character(data$HD2011.Control.of.institution[row.names(data) == x])
+  if (want == "Public") {
+    return(1L)
+  }
+  else {
+    return(0L)
+  }
+}) 
+@
+
+\subsection{Modeling}
+
+Now that we have identified outliers in the data, we can estimate the model, incorporating the transformation to endowment per FTE and the interaction of tuition and fees with an institution's status as public or private.
+
+<<reduceit,echo=FALSE,results=tex>>=
+GradRate.m <- GradRate[-c(groutliers,xoutliers),setdiff(names(GradRate),c("Tuition.Fees.2009.2010", "First.Time.Certificate.Seeking.Ugrad.Enrollment", "Bachelors.Degrees.Awarded","SizeSetting.VSmall.FourYear.NotResidential"))]
+grred <- lm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private + I(log(Endowment.Per.FTE.Enrollment)) - Endowment.Per.FTE.Enrollment,data=GradRate.m)
+grredsum <- summary(grred)
+print(xtable(grredsum,caption=paste0("F = ",round(grredsum$fstatistic,4)[1]," (n = ",length(GradRate[,1])," on ",grredsum$df[2]," degrees of freedom)")))
+@
+
+Some coefficients have lost individual significance of thier coefficients. Scaling of the number of first time certificate seeking undergrads aids it's significance, but others are not aided. It may be necessary to remove them from the model. Additionally, computing the VIF statistic again shows that the tuition and fees interaction with public or private status, as well as undegraduate enrollment and first time certificate seeking undergrad enrollment are causing multicollinearity issues. Centering only appears to make the interaction term's contribution to the model's collinearity issues greater according to the VIF statistic, so we will live with that. We will now test if we can remove the first time certificate seeking undegrad enrollment variable.
+
+<<damnftests>>=
+grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private + I(log(Endowment.Per.FTE.Enrollment)) - Endowment.Per.FTE.Enrollment - First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment,data=GradRate.m)
+grred.rsum <- summary(grred.r)
+F_star <- ((deviance(grred.r) - deviance(grred)) /
+             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grred.rsum$df[1]) -
+                (length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1]))) /
+  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1])
+cv <- qf(0.99,1,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1])
+F_star < cv
+@
+
+$F^*$ is greater than the critical value of $\Sexpr{cv}$ so we cannot remove the first time certificate seeking undergrad variable, the next test shows that we can remove all three of the variables endowment per FTE, the percentage that the average student loan is of tuition, and the percent of first time undgrad transfers enrolled.
+
+<<damnftests2>>=
+grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
+grred.rsum <- summary(grred.r)
+F_star <- ((deviance(grred.r) - deviance(grred)) /
+             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grred.rsum$df[1]) -
+                (length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1]))) /
+  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1])
+cv <- qf(0.99,3,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1])
+F_star < cv
+@
+
+We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. The model exhibits heterskedasticity according the Breusch-Pagan test. We can quickly correct for this by using robust regression estimation.
+
+<<bptest>>=
+bptest(grred.r)
+
+test <- rlm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
+@
+
+\subsection{Intepretation}
+
 
 
 
