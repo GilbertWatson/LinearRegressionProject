@@ -90,6 +90,7 @@ Initial Model Formulation:
 Should we allow for a higher number of variables in the second forward, backwards, and sequential search?
 
 <<loaddata,echo=FALSE>>=
+rm(list=ls())
 data <- read.csv("CSV_1242013-33.csv")
 
 #remove id variables

@@ -90,6 +90,7 @@ Initial Model Formulation:
 Should we allow for a higher number of variables in the second forward, backwards, and sequential search?
 
 <<loaddata,echo=FALSE>>=
+rm(list=ls())
 data <- read.csv("CSV_1242013-33.csv")
 
 #remove id variables
@@ -279,14 +280,22 @@ derived$percent.average.federal.loan.tuition.first.time.ugrad <- data$SFA1011_RV
 derived$percent.average.instition.aid.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.institutional.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
 derived$percent.average.state.local.aid.first.time.ugrad <- data$SFA1011_RV.Average.amount.of.state.local.grant.aid.received.by.full.time.first.time.undergraduates/data$DRVIC2011_RV.Tuition.and.fees..2008.09
 
-derived <- as.data.frame(derived)[!is.na(data$DRVIC2011_RV.Percent.admitted...total),]
+derived <- as.data.frame(derived)[!is.na(data$DRVIC2011_RV.Tuition.and.fees..2010.11),]
 @
 \subsection{Initial Model Results:}
 
 <<tidyup,echo=TRUE>>=
 #remove responses from data and observations with no response
-responsevars <- c("DRVIC2011_RV.Percent.admitted...men","DRVIC2011_RV.Percent.admitted...women")
-data <- data[!is.na(data$DRVIC2011_RV.Percent.admitted...total),setdiff(names(data),responsevars)]
+responsevars <- c("DRVIC2011_RV.Tuition.and.fees..2008.09","DRVIC2011_RV.Tuition.and.fees..2009.10","DRVIC2011_RV.Tuition.and.fees..2011.12",
+                  "DRVIC2011_RV.Total.price.for.in.district.students.living.on.campus..2011.12",
+                  "DRVIC2011_RV.Total.price.for.out.of.state.students.living.on.campus.2011.12",
+                  "DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..not.with.family...2011.12",
+                  "DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..not.with.family...2011.12",
+                  "DRVIC2011_RV.Total.price.for.in.state.students.living.off.campus..with.family...2011.12",
+                  "DRVIC2011_RV.Total.price.for.out.of.state.students.living.off.campus..with.family...2011.12",
+                  "DRVIC2011_RV.Total.price.for.in.state.students.living.on.campus.2011.12",
+                  "DRVF2011_RV.Core.revenues..total.dollars..MERGE")
+data <- data[!is.na(data$DRVIC2011_RV.Tuition.and.fees..2010.11),setdiff(names(data),responsevars)]
 
 #remove single factors
 test <- apply(data,2,unique)
@@ -336,6 +345,7 @@ lindens <- c("DRVEF2011_RV.Adult.age..25.64..enrollment..full.time.graduate",
              "DRVIC2011_RV.Admissions.yield...full.time.men",
              "DRVIC2011_RV.Admissions.yield...full.time.women",
              "DRVIC2011_RV.Admissions.yield...men",
+             "DRVIC2011_RV.Percent.admitted...men",
              "HD2011.FIPS.state.code") #creates linear dependencies with region codes, so let's start there first
 
 #remove widely missing variables from consideration
@@ -359,7 +369,7 @@ if(!file.exists("CleanData2.csv")) {
 }
 data.tmp[is.na(data.tmp)] <- 0 #set everything to zero just to get an initial reponse based model
 
-fullmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=data.tmp)
+fullmodel <- lm(DRVIC2011_RV.Tuition.and.fees..2010.11~.,data=data.tmp)
 fmzeros_archive <- fullmodel
 xx<-model.matrix(fullmodel)[,-1]
 
@@ -372,9 +382,9 @@ xx<-model.matrix(fullmodel)[,-1]
 #exhaustive search takes a long long time with this many variables.
 library(MASS)
 library(leaps)
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=50,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions
@@ -383,42 +393,12 @@ whichmodelb <- summary(modelsb)$which[summary(modelsb)$bic == min(summary(models
 whichmodels <- summary(modelss)$which[summary(modelss)$bic == min(summary(modelss)$bic),]
 inatleastone <- whichmodelf | whichmodelb | whichmodels
 
-testmodel <- lm(fullmodel$model$DRVIC2011_RV.Percent.admitted...total~xx[,which(inatleastone[2:length(inatleastone)] == T)])
+testmodel <- lm(fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11~xx[,which(inatleastone[2:length(inatleastone)] == T)])
 @
 
 <<fullmodel,fig=TRUE,results=verbatim,echo=FALSE>>=
 #everything has an interaction with response, just so we can assess possible correlations in the data
 data.tmp <- data
-
-#list other variables that have little meaning for some observations (specific to survey, not to observational units)
-others <- c("DRVEF2011_RV.Full.time..first.time..degree.certificate.seeking.undergraduates..GRS.Cohort..as.percent.of.all.undergraduates",
-            "EF2011D_RV.Current.year.GRS.cohort.as.a.percent.of.entering.class",
-            "HD2011.Institution.size.category.1")
-
-#remove variables that cause partitions in the data, leading to linear dependencies
-lindens <- c("DRVEF2011_RV.Adult.age..25.64..enrollment..full.time.graduate",
-             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.students",
-             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.graduate",
-             "HD2011.Control.of.institution",
-             "DRVEF2011_RV.Part.time.enrollment",
-             "DRVEF2011_RV.Graduate.enrollment",
-             "DRVEF2011_RV.Part.time.undergraduate.enrollment",
-             "DRVEF2011_RV.Adult.age..25.64..enrollment..graduate",
-             "DRVEF2011_RV.Adult.age..25.64..enrollment..part.time.undergraduate",
-             "DRVEF2011_RV.Part.time.graduate.enrollment",
-             "DRVEF2011_RV.Full.time.graduate.enrollment",
-             "DRVIC2011_RV.Admissions.yield...part.time",
-             "DRVEF2011_RV.Nondegree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Full.time.nondegree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Part.time.nondegree.certificate.seeking.undergraduate.enrollment",
-             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..not.with.family...2011.12",
-             "DRVIC2011_RV.Total.price.for.in.district.students.living.off.campus..with.family...2011.12",
-             "DRVEF2011_RV.Continuing.degree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Full.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Part.time.continuing.degree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Part.time.first.time.degree.certificate.seeking.undergraduate.enrollment",
-             "DRVEF2011_RV.Part.time.transfer.in.degree.certificate.seeking.undergraduate.enrollment",
-             "HD2011.FIPS.state.code") #creates linear dependencies with region codes, so let's start there first
 
 # replace infinte values (rates generated by dividing by zero) with zero (temporary matrix)
 derived.tmp <- as.data.frame(apply(derived, 1:2, function(x) {
@@ -437,28 +417,32 @@ data.tmp <- cbind(data[,setdiff(names(data),c(others,lindens))],derived.tmp)
 varsin <- attr(inatleastone,"names")[(inatleastone == T)]
 
 # add the factors back carefully (hand process)
-facs <- c("HD2011.Institution.size.category",
-          "HD2011.Geographic.region",
-          "HD2011.Degree.of.urbanization..Urban.centric.locale.",
+facs <- c("HD2011.Geographic.region",
+          "HD2011.Historically.Black.College.or.University",
           "HD2011.Carnegie.Classification.2010..Undergraduate.Instructional.Program",
+          "HD2011.Carnegie.Classification.2010..Graduate.Instructional.Program",
+          "HD2011.Carnegie.Classification.2010..Undergraduate.Profile",
           "HD2011.Carnegie.Classification.2010..Size.and.Setting",
-          "HD2011.Carnegie.Classification.2010..Basic")
+          "HD2011.Carnegie.Classification.2000",
+          "HD2011.Institutional.category",
+          "HD2011.Sector.of.institution",
+          "AdmitsGenders")
 
 # and of course the response variable
-resp <- c("DRVIC2011_RV.Percent.admitted...total")
+resp <- c("DRVIC2011_RV.Tuition.and.fees..2010.11")
 
 # get just the data we want in a matrix, but make sure we don't include variables with a high degree of missingness (since we modeled with 0's before)
 data.m <- data.tmp[,names(data.tmp)[names(data.tmp) %in% setdiff(c(varsin,facs,resp),names(missing)[missing > 100])]]
 
 # estimate the new model with these variables, getting rid of missing data in the process
-fullmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=data.m)
+fullmodel <- lm(DRVIC2011_RV.Tuition.and.fees..2010.11~.,data=data.m)
 xx<-model.matrix(fullmodel)[,-1]
 
 #do automated variable selection both forwards and backwards in an attempt to find a starting model, get a liberal number of variables
 #exhaustive search takes a long long time with this many variables.
-modelsf <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="forward",really.big=T)
-modelsb <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="backward",really.big=T)
-modelss <- regsubsets(x=xx,nbest=20,nvmax=20,y=fullmodel$model$DRVIC2011_RV.Percent.admitted...total,method="seqrep",really.big=T)
+modelsf <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="forward",really.big=T)
+modelsb <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="backward",really.big=T)
+modelss <- regsubsets(x=xx,nbest=20,nvmax=21,y=fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="seqrep",really.big=T)
 
 
 # get best model from both forward, backwards, and sequential deletions
@@ -468,18 +452,18 @@ whichmodels <- summary(modelss)$which[summary(modelss)$bic == min(summary(models
 inatleastone <- whichmodelf | whichmodelb | whichmodels
 
 #create a new dataset to do exhaustive search on
-testdata <- as.data.frame(cbind(fullmodel$model$DRVIC2011_RV.Percent.admitted...total,xx[,which(inatleastone[2:length(inatleastone)] == T)]))
-names(testdata)[1] <- "DRVIC2011_RV.Percent.admitted...total"
-testmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=testdata)
+testdata <- as.data.frame(cbind(fullmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,xx[,which(inatleastone[2:length(inatleastone)] == T)]))
+names(testdata)[1] <- "DRVIC2011_RV.Tuition.and.fees..2010.11"
+testmodel <- lm(DRVIC2011_RV.Tuition.and.fees..2010.11~.,data=testdata)
 xx <- model.matrix(testmodel)[,-1]
 
 #branch and prune selection
-models <- leaps(x=xx,y=testmodel$model$DRVIC2011_RV.Percent.admitted...total,method="adjr",nbest=3)
+models <- leaps(x=xx,y=testmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,method="adjr",nbest=3)
 
 #estimate the best model
-lastdata <- as.data.frame(cbind(testmodel$model$DRVIC2011_RV.Percent.admitted...total,xx[,which(models$which[(models$adjr2 == max(models$adjr2)),])]))
-names(lastdata)[1] <- "DRVIC2011_RV.Percent.admitted...total"
-lastmodel <- lm(DRVIC2011_RV.Percent.admitted...total~.,data=lastdata)
+lastdata <- as.data.frame(cbind(testmodel$model$DRVIC2011_RV.Tuition.and.fees..2010.11,xx[,which(models$which[(models$adjr2 == max(models$adjr2)),])]))
+names(lastdata)[1] <- "DRVIC2011_RV.Tuition.and.fees..2010.11"
+lastmodel <- lm(DRVIC2011_RV.Tuition.and.fees..2010.11~.,data=lastdata)
 summary(lastmodel)
 
 #write minimal data to file
@@ -493,7 +477,7 @@ if(!file.exists("MinimalData2.csv")) {
 %--------------------------------------------
 <<diagnostics>>=
 require(ggplot2)
-qplot(x=testdata$DRVIC2011_RV.Percent.admitted...total,y=lastmodel$residuals,xlab="response",ylab="residuals")
+qplot(x=testdata$DRVIC2011_RV.Tuition.and.fees..2010.11,y=lastmodel$residuals,xlab="response",ylab="residuals")
 @
 
 
