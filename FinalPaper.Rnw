@@ -75,6 +75,43 @@ q <- ggplot(aes(x=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years.
 q + geom_point() + xlab("5 Year Graduation Rate") + ylab("Tuition and Fees (2010-2011)") + scale_colour_discrete(name="Institutional Control") + ggtitle("US Undergraduate Serving Institutions")
 @
 
+%-------------------------------------------
+\section{ANOVA Analysis}
+%-------------------------------------------
+
+\subsection{One-Way ANOVA}
+
+<<anova,results=tex>>=
+library(alr3)
+library(xtable)
+simpleanovalm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11-1,
+                    data=data)
+simpleanova <- anova(simpleanovalm)
+print(xtable(pureErrorAnova(simpleanovalm)))
+@
+
+\subsection{Two-Way ANOVA}
+
+<<twoway1,results=tex>>=
+anovapublicprivatelm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Control.of.institution - 1,data=data)
+anovapublicprivate <- anova(anovapublicprivatelm)
+print(xtable(pureErrorAnova(anovapublicprivatelm)))
+@
+
+<<extrasum1,results=tex>>=
+print(xtable(anova(anovapublicprivatelm,simpleanovalm)))
+@
+
+<<twoway2,results=tex>>=
+anovasectorlm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Carnegie.Classification.2010..Undergraduate.Profile,data=data)
+anovasector <- anova(anovasectorlm)
+print(xtable(pureErrorAnova(anovasectorlm)))
+@
+
+<<extrasum2,results=tex>>=
+print(xtable(anova(anovasectorlm,simpleanovalm)))
+@
+
 \subsection{Data Cleaning}
 
 Several steps were taken to clean the data prior to analysis. A full accounting of the steps taken is in the source code for this document, which will be made available on Github. A list of the high points which do concern the analysis follows:
@@ -289,6 +326,7 @@ F_star < cv
 We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. The model exhibits heterskedasticity according the Breusch-Pagan test. We can quickly correct for this by using robust regression estimation.
 
 <<bptest>>=
+library(lmtest)
 bptest(grred.r)
 
 test <- rlm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
