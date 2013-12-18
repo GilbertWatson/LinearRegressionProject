@@ -323,19 +323,42 @@ cv <- qf(0.99,3,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum
 F_star < cv
 @
 
-We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. The model exhibits heterskedasticity according the Breusch-Pagan test. We can quickly correct for this by using robust regression estimation.
-
-<<bptest>>=
-library(lmtest)
-bptest(grred.r)
-
-test <- rlm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
+<<finalmodelresults,echo=FALSE,results=tex>>=
+print(xtable(grred.rsum,caption=paste0("F = ",round(grred.rsum$fstatistic,4)[1]," (n = ",length(grred.r$model[,1])," on ",grred.rsum$df[2]," degrees of freedom)")))
 @
 
-\subsection{Intepretation}
+We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. The model exhibits heterskedasticity according the Breusch-Pagan test. We can quickly correct for this by using robust regression estimation.
 
+<<bptest,results=tex>>=
+library(lmtest)
+bp <- bptest(grred.r)
+bp <- data.frame(`Breusch-Pagan Statistic` = bp$statistic,
+                 `Degrees of Freedom` = bp$parameter,
+                 `Test` = bp$method[1],
+                 `P Value` = bp$p.value,
+                 row.names=NULL,check.rows=F,check.names=F,stringsAsFactors=F
+                 )
+print(xtable(bp))
+@
 
+<<robustestimate,results=tex>>=
+robustestimate <- rlm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
+robustsumm <- summary(robustestimate)
+print(xtable(robustsumm$coefficients,caption=paste0("Residual Standard Error = ",round(robustsumm$sigma,4)," (n = ",length(robustestimate$model[,1])," on ",robustsumm$df[2]," degrees of freedom)")))
+@
 
+\subsection{Intepretation and Inference}
 
+%-------------------------------------------
+\section{Conclusion}
+%-------------------------------------------
+
+%-------------------------------------------
+\section{References}
+%-------------------------------------------
+
+%-------------------------------------------
+\section{Appendix}
+%-------------------------------------------
 
 \end{document}
