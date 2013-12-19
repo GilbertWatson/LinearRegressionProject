@@ -1,0 +1,49 @@
+\subsection{One-Way ANOVA}
+
+We first conduct an analysis of variance to explore the relationship between the cost of attending an institution and that institution’s 5-year graduation rate (Table 1). This relationship should provide a rough proxy for the quality of a university as it is reasonable to assume that a “better” university will be more expensive to attend due to higher demand for the limited number of slots in its freshman class. Of course, there is clear endogeneity here as the “better” institutions are able to be more selective in their admissions, which allows them to charge more for their services. Relatedly, the academic quality of the students attending a given university affects both its quality and the amount that it can charge for tuition and fees. Family income has been shown to have a positive impact on both test scores and college enrollment meaning that those students most likely to be admitted to selective schools are also those most likely to attend them because they likely face a minimal constraint on their resources. 
+
+<<anova,results=tex,echo=FALSE>>=
+library(alr3)
+library(xtable)
+simpleanovalm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11-1,
+                    data=data)
+simpleanova <- anova(simpleanovalm)
+print(xtable(pureErrorAnova(simpleanovalm),caption="ANOVA: Grad Rates vs. Costs"))
+@
+
+\FloatBarrier
+
+The results of the ANOVA indicate that the coefficient on institutional costs is statistically different from zero (and positive) in this simple model (F-test of null hypothesis that the coefficient is equal to zero versus the alternative that it is nonzero). We also find that about 83\% of the variation in 5-year rates is explained by institutional costs alone, after controlling for degrees of freedom. We then use an F-test for Lack-of-Fit to determine if this basic model is properly specified (i.e. that a linear fit is appropriate) by evaluating the null hypothesis that we have the correct specification versus the alternative that a different model is more appropriate (Table 1, column "Pr(>F)"). We find that the simple model of regressing 5-year graduation rates on institutional cost is significant at the < 1\% level. However, given the exploratory scatter plot above, we know that the story isn't that simple. Additionally, it must be noted that our data doesn't entirely meet the assumptions underlying ANOVA. A Breusch-Pagan test for heterskedasticity indicates that we must reject the null hypothesis that there is equal variance in the residuals between levels of tuition and fees.
+
+\subsection{Two-Way ANOVA}
+
+The ANOVA
+
+<<twoway1,results=tex,echo=FALSE>>=
+anovapublicprivatelm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Control.of.institution + DRVIC2011_RV.Tuition.and.fees..2010.11:HD2011.Control.of.institution - 1,data=data)
+anovapublicprivate <- anova(anovapublicprivatelm)
+print(xtable(pureErrorAnova(anovapublicprivatelm),caption="Two-Way ANOVA: Grad Rates vs. Costs and Inst. Control"))
+@
+
+<<extrasum1,results=tex,echo=FALSE>>=
+print(xtable(anova(simpleanovalm,anovapublicprivatelm),caption="ESS Table: Addition of Inst. Control"))
+@
+
+<<anovaplot,echo=FALSE,fig=TRUE>>=
+g <- ggplot(aes(x=DRVIC2011_RV.Tuition.and.fees..2010.11,y=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,colour=HD2011.Carnegie.Classification.2010..Undergraduate.Profile),data=data)
+g + geom_point() + xlab("Tuition and Fees") + ylab("5 Year Graduation Rate") + ggtitle("Grad Rates, Costs, and Undergrad Profile") + scale_colour_discrete(name="Undergraduate Profile") + theme(legend.position="right",legend.text=element_text(size=5))
+@
+
+<<twoway2,results=tex,echo=FALSE>>=
+anovasectorlm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Carnegie.Classification.2010..Undergraduate.Profile + DRVIC2011_RV.Tuition.and.fees..2010.11:HD2011.Carnegie.Classification.2010..Undergraduate.Profile - 1,data=data)
+anovasector <- anova(anovasectorlm)
+print(xtable(pureErrorAnova(anovasectorlm),caption="Two-Way ANOVA: Grad Rates vs. Costs and Inst. Sector"))
+@
+
+<<extrasum2,results=tex,echo=FALSE>>=
+print(xtable(anova(simpleanovalm,anovasectorlm),caption="ESS Table: Addition of Inst. Sector"))
+@
+
+\FloatBarrier
+
+We present a much more robust model of 5-year graduation rates below. From this Lack-of-Fit test, we also determine that a significant portion of the variation in graduation rates can potentially be explained by cost alone as the maximum possible R-square is 0.96. These results indicate that focusing on costs as a determinant of graduation rates is a good start but that additional predictor variables need to be considered before any type of serious inference can be made. Below we present a model that incorporates these additional predictors and offers a better explanation of the variance in graduation rates across institutions.

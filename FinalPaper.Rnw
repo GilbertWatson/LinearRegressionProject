@@ -4,6 +4,8 @@
 \usepackage{amsmath}
 \usepackage{times}
 \usepackage{enumerate}
+\usepackage{cite}
+\usepackage{placeins}
 
 \textwidth=6.2in
 \textheight=8.5in
@@ -32,8 +34,8 @@
 %------------------------------------------------------------
 \title{Regression Analysis of Higher Education Outcomes}
 %------------------------------------------------------------
-\author{Gilbert Watson}
-\date{Monday, November 25th, 2013}
+\author{Gilbert Watson, David Wasser, and Paul Biedlingmaier}
+\date{Thursday, December 19th, 2013}
 
 \SweaveOpts{highlight=TRUE, tidy=TRUE, keep.space=TRUE, keep.blank.space=FALSE, keep.comment=TRUE}
 \SweaveOpts{prefix.string=Fig}
@@ -46,14 +48,16 @@
 \section{Introduction}
 %-------------------------------------------
 
-Higher education is big business blah, blah, blah, blah.
+Higher education is a big business. College students, their parents, student loan companies, and the federal government dump huge amounts of money into the endeavor every year. Given the large amounts of money involved, many may wonder what post-secondary institutions are doing the best per dollar spent in terms of achieving education outcomes? While this paper doesn't seek to examine that question in its entirety, it does seek to examine a small component - education outcomes as measured by graduation rates. High graduation rates are indicative high achieving institution. What types of institutional characteristics cause there to be high graduation rates? After controlling for various characteristics, is there a relationship between tuition costs and a school with a higher graduation rate? These are important questions that are very pertinent to soon to be college students. If they can expect to receive a better education (or at least a more expedient one) just by paying more (all other things being equal) then that would be a good piece of information to know.
+
+This paper seeks to examine the relationship between graduation rates and other post-secondary institutional factors through a variety of means. Using a widely available government data set, one-way, two-way, and regression analyses are conducted, all in an attempt to understand the drivers behind graduation rates.
 
 %-------------------------------------------
-\section{The Data}
+\section{Methods and Materials: The Data}
 %-------------------------------------------
 
 \subsection{Raw Data}
-Data on five year graduate rates, tuition and fees, and other post-secondary institutional characteristics are available through the US Department of Education's National Center for Education Statistics (NCES). For this study, we chose to only consider data for those institutions that possess the following characteristics:
+Data on five year graduate rates, tuition and fees, and other post-secondary institutional characteristics are available through the US Department of Education's National Center for Education Statistics (NCES) \footnote{http://nces.ed.gov/datatools/}. For this study, we chose to only consider data for those institutions that possess the following characteristics:
 
 \begin{enumerate}[a)]
 \item{} Title IV participating
@@ -66,90 +70,126 @@ Data on five year graduate rates, tuition and fees, and other post-secondary ins
 
 The survey that collects this data is administered yearly, but for this study, we chose to only consider the cross section available from the 2010 survey. We do not intend to examine the time dynamics of institutional characteristics.
 
-The original dataset contains 1499 observational units and 320 variables. Variables contain data on characteristics such as admission rates, admission yeilds, tuition and other costs, student body demographics, graduation rates, averages and percentages of students recieving various types of aid, pay rates for different types of university faculty, and various institutional financials on a per faculty basis. In particular, this paper seeks to examine two of these variables relationships to the others - five year undergraduate graduation rates and 2010-2011 educational year tuition and fees. What institutional characteristics are associated with strong educational outcomes (a high graduation rate) and does this have any relationship to the institutional determinants of high cost? A quick examination would show that there is in fact a relationship. A scatter plot of five year graduation rates and tuition and fees shows the existence of a strong relationship, and beyond that a relationship that is bifurcated between private and public institutions. This isn't surprising. Elite educational institutions often cost more and often have higher graduation rates if for no other reason than they attract top notch students. There is a bit of self selction bias going on. This paper is not concerned with this relationship alone. We are concerned about the individual predictors associated with tuition and fees (of which graduate rates may be one) and the individual predictors of graduation rates. Are the predictors similar, or are they determined by wholy different factors when accounting for things like selectivity?
+The original data set contains 1499 observational units and 320 variables. Variables contain data on characteristics such as admission rates, admission yields, tuition and other costs, student body demographics, graduation rates, averages and percentages of students receiving various types of aid, pay rates for different types of university faculty, and various institutional financials on a per faculty basis. In particular, this paper seeks to examine the relationship between five year undergraduate graduation rates and other variables in the data set. Five year graduate rates are a proxy for educational quality in that they measure the intended outcome of higher education - earning a degree. One would imagine that institutions that deliver high educational outcomes, like a high graduation rate for its students would potentially cost more. Is this the case? Is there a relationship between graduation rates and the type of institution whether that institution be public or private? Controlling for the selectivity of an institution, which likely has a relationship with graduation rates itself, is there a relationship between how much a person pays for college and the college's ability to produce graduates? These are the questions this paper seeks to answer. To begin, let's take a look at a motivating scatter plot. 
 
 <<sourceanalysis1,echo=FALSE,fig=TRUE,figs.only=TRUE>>=
 source('Analysis.R')
+require(lmtest)
 require(ggplot2)
-q <- ggplot(aes(x=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,y=DRVIC2011_RV.Tuition.and.fees..2010.11,colour=HD2011.Control.of.institution),data=data)
-q + geom_point() + xlab("5 Year Graduation Rate") + ylab("Tuition and Fees (2010-2011)") + scale_colour_discrete(name="Institutional Control") + ggtitle("US Undergraduate Serving Institutions")
+q <- ggplot(aes(y=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,x=DRVIC2011_RV.Tuition.and.fees..2010.11,colour=HD2011.Control.of.institution),data=data)
+q + geom_point() + ylab("5 Year Graduation Rate") + xlab("Tuition and Fees (2010-2011)") + scale_colour_discrete(name="Institutional Control") + ggtitle("US Undergraduate Serving Institutions") + theme(legend.position="top",legend.text=element_text(size=8))
 @
 
-%-------------------------------------------
-\section{ANOVA Analysis}
-%-------------------------------------------
+A quick examination of this plot shows that there is in fact a relationship between graduation rates and cost. A scatter plot of five year graduation rates and tuition and fees shows the existence of a strong relationship. It also shows a relationship that is bifurcated between private and public institutions. This isn't surprising. Public school tuition is largely subsidized, so we would expect an interaction between costs and the public, private status of the institution. We will begin with an ANOVA analysis of this relationship, but we are not concerned with this relationship alone. After conducting both one-way and two-way ANOVA, this paper will seek to generate a regression model for graduation rates using the best predictors from the data set. Just because we see the existence of a strong relationship between costs, public/private status, and graduation rates does not mean that there are no other underlying and significant relationships of interest.
 
-\subsection{One-Way ANOVA}
+\FloatBarrier
 
-<<anova,results=tex>>=
-library(alr3)
-library(xtable)
-simpleanovalm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11-1,
-                    data=data)
-simpleanova <- anova(simpleanovalm)
-print(xtable(pureErrorAnova(simpleanovalm)))
-@
-
-\subsection{Two-Way ANOVA}
-
-<<twoway1,results=tex>>=
-anovapublicprivatelm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Control.of.institution - 1,data=data)
-anovapublicprivate <- anova(anovapublicprivatelm)
-print(xtable(pureErrorAnova(anovapublicprivatelm)))
-@
-
-<<extrasum1,results=tex>>=
-print(xtable(anova(anovapublicprivatelm,simpleanovalm)))
-@
-
-<<twoway2,results=tex>>=
-anovasectorlm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~DRVIC2011_RV.Tuition.and.fees..2010.11 + HD2011.Carnegie.Classification.2010..Undergraduate.Profile,data=data)
-anovasector <- anova(anovasectorlm)
-print(xtable(pureErrorAnova(anovasectorlm)))
-@
-
-<<extrasum2,results=tex>>=
-print(xtable(anova(anovasectorlm,simpleanovalm)))
-@
+While the data relating to the ANOVA analysis is largely clean and complete in the database, more extensive cleaning measure were taken to conduct regression analysis. A quick discussion of the steps taken to clean the data should executed before we jump into analysis.
 
 \subsection{Data Cleaning}
 
-Several steps were taken to clean the data prior to analysis. A full accounting of the steps taken is in the source code for this document, which will be made available on Github. A list of the high points which do concern the analysis follows:
+Several steps were taken to clean the data prior to analysis. A full accounting of the steps taken is in the source code for this document, which will be made available on Github \footnote{https://github.com/GilbertWatson/LinearRegressionProject}. A list of the high points which do concern the analysis follows:
 
 \begin{enumerate}[a)]
 \item{} Institutional identification variables were removed.
-\item{} A small collection of variables concerning a partitular cohort of students measured by NCES was removed.
+\item{} A small collection of variables concerning a particular cohort of students measured by NCES was removed.
 \item{} The small differences between FASB and GASB financial reporting methods for educational institutions are ignored and those variables are merged. These largely comprise per full-time equivalent institutional finance variables.
 \item{} In-state and out-of-state cost variables are merged for private institutions where they have no applicability
 \item{} Admission rates for institutions that only serve one gender were adjusted to zero for the appropriate gender. Additionally, a categorical variable indicating whether an institution serves males, females, or both was generated.
 \item{} One pair of variables that partitioned the data were removed to eliminate the possibility of linear dependence between columns. For example, percentage of students enrolled in non-degree programs was removed as a variable in the presence of full-time and part-time enrollment because all three would perfectly partition the total enrollment variable.
-\item{} Several variable transformations were preformed before analysis to eliminate obvious sources of colinearity. For example, the percentage of enrollment comprised of undergrads was generated to account for the fact that undergraduate enrollment and total enrollment are highly correlated. None of the original variables were removed and are still taken into consideration as predictors, but the transformations made seemed like obvious normalizations.
-\item{} Variables that are missing for over 100 observations are removed from the dataset. This eliminates variables like the revenue from state appropriations since most private schools do not recieve state appropriations.
+\item{} Several variable transformations were preformed before analysis to eliminate obvious sources of co-linearity. For example, the percentage of enrollment comprised of undergrads was generated to account for the fact that undergraduate enrollment and total enrollment are highly correlated. None of the original variables were removed and are still taken into consideration as predictors, but the transformations made seemed like obvious normalizations.
+\item{} Variables that are missing for over 100 observations are removed from the data set. This eliminates variables like the revenue from state appropriations since most private schools do not receive state appropriations.
 \end{enumerate}
 
 %-------------------------------------------
-\section{Dimensionality Reduction}
+\section{Methods and Materials: ANOVA Analysis}
 %-------------------------------------------
 
-319 potential predictors is a lot of variables to deal with. In the face of this, and without any qualitative understanding of the drivers behind graduation rates and tuition and fees, an automated variable selection method was used to reduce the dataset to a manageable number of predictors. For each response variable, the following steps were taken to reduce the dataset.
+Using the raw, uncleaned data set, we conducted an initial set of ANOVA analyses.
+
+\subsection{One-Way ANOVA}
+
+We first conduct an analysis of variance to explore the relationship between the institution’s 5-year graduation rate and its status as a public or private not-for-profit institution (Table 1). Our initial motivating scatter plot suggests that there may be differences in graduation rates achieved by these two types of institutions, but it is hard to say for sure. While there is a clear split between the two groups in terms of tuition and fees, there a quite a few of both types for each level of graduation rate. It is easy to calculate that the mean graduation rate for public institutions is $\Sexpr{round(mean(data$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total[(data$HD2011.Control.of.institution == "Public")],na.rm=T),3)}$ and $\Sexpr{round(mean(data$DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total[(data$HD2011.Control.of.institution == "Private not-for-profit")],na.rm=T),3)}$ for private institutions, but is there a true, statistical difference between the two groups?
+
+$$ H_0\text{: No Difference Between Groups} $$
+$$ H_a\text{: Difference Between Groups} $$
+$$ \text{If }F^* > F(0.99,2,1465)\text{ Reject }H_0 $$
+
+<<anova,results=tex,echo=FALSE>>=
+library(alr3)
+library(xtable)
+simpleanovalm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~HD2011.Control.of.institution - 1,
+                    data=data)
+simpleanova <- anova(simpleanovalm)
+print(xtable(simpleanovalm,caption="ANOVA: Grad Rates vs. Public/Private"))
+@
+
+\FloatBarrier
+
+From the table above, we can see that we should reject $H_0$. Graduation rates do differ between public and private institutions. We should note make a quick note that this ANOVA model doesn't quite meet the assumptions required. For one, there is evidence of unequal variances between groups as evidenced by a p-value for the Breusch-Pagan test of $\Sexpr{bptest(simpleanovalm)$p.value}$. Secondly, the residuals, while distributed symmetrically, are clearly not distributed normally when viewing a QQ plot. We will attempt to use a more sophisticated regression model to deal with these problems later.
+
+<<anotherdamnqq,echo=FALSE,fig=TRUE>>=
+qplot(sample=simpleanovalm$residuals,stat="qq",main="QQ Plot - One-Way ANOVA")
+@
+
+\FloatBarrier
+
+\subsection{Two-Way ANOVA}
+
+Despite the results of the one-way ANOVA analysis, it is clear from our motivating scatter plot that there are additional factors at play. Even though public schools have a lower five year graduation rate on average, there still are public schools that perform at similar levels to private institutions. It is possible that selectivity has a role to play in this. Perhaps the most selective public schools produce graduates by the five year mark at the same rate as private institutions. A visual representation of this relationship is not quite as clean as our motivating graphic.
+
+<<anovaplot,echo=FALSE,fig=TRUE>>=
+g <- ggplot(aes(x=DRVIC2011_RV.Tuition.and.fees..2010.11,y=DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total,colour=HD2011.Carnegie.Classification.2010..Undergraduate.Profile),data=data)
+g + geom_point(size=1) + xlab("Tuition and Fees") + ylab("5 Year Graduation Rate") + ggtitle("Grad Rates, Costs, and Undergrad Profile") + scale_colour_discrete(name="Undergraduate Profile") + theme(legend.position="right",legend.text=element_text(size=5))
+@
+
+\FloatBarrier
+
+A way to test for this is to conduct two-way ANOVA analysis and conduct an F-test for the significance of the within-groups effect using the Carnegie Classification for an institution's undergraduate program's selectivity as the second tabular dimension. This variable partitions the institutions into various levels of selectivity and programs types and will be a good proxy for the effect we are trying to understand. 
+
+$$ H_0\text{: No Difference Within Groups} $$
+$$ H_a\text{: Difference Within Groups} $$
+$$ \text{If }F^* > F(0.99,8,1449)\text{ Reject }H_0 $$
+
+<<twoway1,results=tex,echo=FALSE>>=
+anovapublicprivatelm <- lm(DRVGR2011_RV.Graduation.rate...Bachelor.degree.within.5.years..total~HD2011.Control.of.institution + HD2011.Carnegie.Classification.2010..Undergraduate.Profile + HD2011.Carnegie.Classification.2010..Undergraduate.Profile:HD2011.Control.of.institution - 1,data=data)
+anovapublicprivate <- anova(anovapublicprivatelm)
+print(xtable(anovapublicprivate,caption="Two-Way ANOVA: Grad Rates vs. Inst.Sector and Inst. Control"))
+@
+
+\FloatBarrier
+
+It is clear from the table above that we do reject $H_0$ and conclude that even within groups of similar selectivity and type there are differences between public and private institutions' graduation rates. A table of the reduction in residual sum of squares and the significance of the addition of selectivity type variables follows.
+
+<<extrasum1,results=tex,echo=FALSE>>=
+print(xtable(anova(simpleanovalm,anovapublicprivatelm),caption="ESS Table: Addition of Inst. Sector"))
+@
+
+\FloatBarrier
+
+We must again note that this model suffers from the same issues associated with the one-way ANOVA analysis (a p-value for the Breusch-Pagan statistic of $\Sexpr{bptest(anovapublicprivatelm)$p.value}$ and a similar profile QQ plot). A more sophisticated model is necessary to deal with these issues and better explain the variation in graduation rates among institutions. A model that includes more predictors may alleviate some of the issues underlying the ANOVA analysis. A more sophisticated model will also reveal deeper relationships at play that just those between institutional classification and graduation rates.
+
+%-------------------------------------------
+\section{Methods and Materials:  Regression Analysis of 5 Year Graduation Rates}
+%-------------------------------------------
+
+\subsection{Dimensionality Reduction}
+
+319 potential predictors is a daunting number of variables to deal with. For the purposes of regression analysis, and without any qualitative understanding of the drivers behind graduation rates and tuition and fees other than those explored by ANOVA analysis, an automated variable selection method was used to reduce the data set to a manageable number of predictors. This step was used to generate an initial first order regression model for five year graduation rates. As it was a rather extensive effort, and as it greatly influenced our analysis, a discussion of the method used is given its own section. The following steps were taken to reduce the data set to a size manageable for more detailed modeling.
 
 \begin{enumerate}[1)]
-\item{} Variables closely related to the response were removed from the dataset. For example, in the case of graduation rates, 4 and 6 year graduation rates were removed when using the 5 year graduation rate as a response variable.
+\item{} Variables closely related to the response were removed from the data set. For example, 4 and 6 year graduation rates were removed since they are so closely related to the 5 year graduation rate.
 \item{} The full model with all remaining candidate predictors is estimated.
-\item{} Using the full model, forward, backward, and sequential automated variable selection algorithms are used to search for the best full model. Each method is was allowed to pick a set of up to 50 predictors which optimized model BIC. The union of these predictors is passed to the next step.
-\item{} All but those predictors proposed by the previous step are removed from the dataset. During this step, missing values are retained. A full model with those predictors remaining is estimated. Again, the three methods choose the best model availiable to the algorithm using BIC as a criterion. Each is allowed to consider models of up to 20 predictors. The union of these predictors is passed to the next step.
-\item{} Only those predictors selected by the previous step are retained in the dataset. An efficient branch-and-bound algorithm is used to search the remaining predictors for the best model. The criterion doesn't matter since the search is exhaustive. The predictors selected by this step are used as the initial step in modeling.
+\item{} Using the full model, forward, backward, and sequential automated variable selection algorithms are used to search for the best reduced model. Each method is was allowed to pick a set of up to 50 predictors which optimized model BIC. The union of these predictors is passed to the next step.
+\item{} All but those predictors proposed by the previous step are removed from the data set. A full model with those predictors remaining is estimated. Again, the three methods of automated variable selection choose the best model available to the algorithm using BIC as a criterion. Each is allowed to consider models of up to 20 predictors. The union of these predictors is passed to the next step.
+\item{} Only those predictors selected by the previous step are retained in the data set. An efficient branch-and-bound algorithm is used to search the remaining predictors for the best model. The criterion doesn't matter since the search is exhaustive. The predictors selected by this step are used as the initial step in modeling.
 \end{enumerate}
 
-The reason for using multiple stages of automated variable selection is that exhaustive search for the best model using just first order terms would be very computationally intensive. This method gives us a manageable number of predictors to begin model refinement. Even graphical search for potential predictors would have been difficult with so many potential variables. There would have been over fifty thousand paired scatter plots to consider.
-
-%-------------------------------------------
-\section{Regression Analysis: 5 Year Graduation Rates}
-%-------------------------------------------
+The reason for using multiple stages of automated variable selection is that exhaustive search for the best model using just first order terms would be very computationally intensive using the full set of predictors. This method gives us a manageable number of predictors to begin model refinement. Even graphical search for potential predictors would have been difficult with so many potential variables. Consider that there would have been over fifty thousand paired scatter plots to consider. This method effectively delivers a working data set containing only those predictors that are most explanatory of five year graduation rates. Most importantly, it delivers a smaller data set, giving us a manageable place to start model refinement.
 
 \subsection{Initial Model}
 
-After the initial data reduction effort described above, an initial model for five year undergraduate graduation rates results. The table below gives the summary statistics for the dataset underlying the model:
+After the initial data reduction effort described above, an initial model for five year undergraduate graduation rates results. The table below gives the summary statistics for the data set underlying the model:
 
 <<gradrateinitial,echo=FALSE,results=tex>>=
 summ <- NULL
@@ -162,7 +202,9 @@ require(xtable)
 print(xtable(summ,caption=paste0("Summary Statistics For Dataset (n = ",length(GradRate[,1]),")")))
 @
 
-A table outlining the full model associated with this dataset follows:
+\FloatBarrier
+
+If we estimate a full model, using all of this truncated data set, we see the following estimates of coefficients and their individuals p-values.
 
 <<fullmodelgradate,echo=FALSE,results=tex>>=
 grfull <- lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate)
@@ -170,7 +212,9 @@ summ <- summary(lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate))
 print(xtable(summ,caption=paste0("F = ",round(summ$fstatistic,4)[1]," (n = ",length(GradRate[,1])," on ",summ$df[2]," degrees of freedom)")))
 @
 
-The first thing we should do is examine scatter plots of the five year graduation rate with other, non-binary variables in the reduced dataset, just to get a sense of what is going on.
+\FloatBarrier
+
+The first thing we should do is examine scatter plots of the five year graduation rate with other, non-binary variables in the reduced data set, just to get a sense of the relationships between the predictors and the five year graduation rate.
 
 <<pairs,echo=FALSE,fig=TRUE,>>=
 require(reshape2)
@@ -191,93 +235,138 @@ qdata <- melt(GradRate[setdiff(names(GradRate),c("Size.Under.1000",
 group1 <- c("Tuition.Fees.2009.2010",
                      "Tuition.Fees.2010.2011",
             "Undergraduate.Enrollment",
-                     "First.Time.Certificate.Seeking.Ugrad.Enrollment",
+                     "First.Time.Certificate.Seeking.Ugrad.Enrollment")
+group2 <- c(
                      "First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment",
                      "Percent.Total.Enrollment.White",
                      "Full.Time.Retention.Rate.2011",
                      "Bachelors.Degrees.Awarded")
-group2 <- c("Percent.First.Time.Full.Time.Ugrad.Pell.Grant.Recipients",
+group3 <- c("Percent.First.Time.Full.Time.Ugrad.Pell.Grant.Recipients",
                      "Investment.Return.As.Percent.Core.Revenue",
                      "Endowment.Per.FTE.Enrollment",
-                     "Male.Female.Full.Time.Admission.Yeild.Difference",
+                     "Male.Female.Full.Time.Admission.Yeild.Difference")
+group4 <- c(
                      "Percent.First.Time.Transfer.Ugrad.Enrollment",
                      "Assistant.Percentage.Full.Prof.Salary",
                      "Percent.Average.Student.Loan.Of.Tuition.Ugrad")
 g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group1,])
-g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("")
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("") + ggtitle("Predictors vs. Grad Rates (1)")
 @
 
 <<scatter2,echo=FALSE,fig=TRUE>>=
 g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group2,])
-g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("")
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("") + ggtitle("Predictors vs. Grad Rates (2)")
 @
 
-It is clear from this excersize that our full model has several serious problems. There are two pairs of variables that are clearly very collinear. "Tuition.Fees.2009.2010" and "Tuition.Fees.2010.2011" as well as "First.Time.Certificate.Seeking.Ugrad.Enrollment" and "First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment" are providing almost the same information to the model. This can be confirmed by computing the variance inflation factors for all the variables in the full model. Clearly one variable of each pair should be removed from the model.
+<<scatter3,echo=FALSE,fig=TRUE>>=
+g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group3,])
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("") + ggtitle("Predictors vs. Grad Rates (3)")
+@
 
-It is also clear from this table that "Undergraduate.Enrollment" and "Bachelor.Degrees.Awarded" are also causing collinearity issues. One would suspect that an intstitution with a large undergraduate enrollment would also have a large number of bachelor degrees awarded. One of these pair should likely be removed as well.
+<<scatter4,echo=FALSE,fig=TRUE,height=4>>=
+g <- ggplot(aes(Five.Year.Bachelors.Graduation.Rate,value,group=variable),data=qdata[qdata$variable %in% group4,])
+g + geom_point(size=1) + facet_wrap(~variable,scales="free") + theme(strip.text.x = element_text(size = 4)) + xlab("Graduation Rate") + ylab("") + ggtitle("Predictors vs. Grad Rates (4)")
+library(car)
+@
+
+\FloatBarrier
+
+It is clear from this excercise that our full model has several serious problems. There are two pairs of variables that are very co-linear and appear to contain almost the same information. "Tuition.Fees.2009.2010" and "Tuition.Fees.2010.2011" as well as "First.Time.Certificate.Seeking.Ugrad.Enrollment" and "First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment" are providing almost the same information to the model. This can be confirmed by computing the variance inflation factors for all the variables in the full model. Clearly one variable of each pair should be removed from the model as the VIF value for each component of each pair well above the average VIF of $\Sexpr{round(mean(vif(grfull)),3)}$.
+
+It is also clear from this table that "Undergraduate.Enrollment" and "Bachelor.Degrees.Awarded" are also causing co-linearity issues, though the issues are not as severe as with the other two pairs of predictors. One would suspect that an institution with a large undergraduate enrollment would also have a large number of bachelor degrees awarded. One of these pair should likely be removed as well.
 
 <<vif,echo=FALSE,results=tex>>=
 library(car)
 vtable <- data.frame(Variable=names(vif(grfull)),VIF=vif(grfull))
 row.names(vtable) = NULL
-print(xtable(vtable))
+print(xtable(vtable,caption="Variance Inflation Factor Table - Full Model"))
 @
 
-Another obvious correction would be to include an indicator variable for public institutions back into the model. The scatter plot panel with tuition on the y axis and graduation rate on the x axis is just the same as our first scatter plot comparing the two. The is a very obvious interaction between tuition and an institution's identity as public or private.
+\FloatBarrier
 
-One more obvious correction would be to add a variable transformations for endowment per FTE. Earlier scatter plots indicate a diminishing relationship between this variable and graduation rates. An appropriate transform for endowment per FTE appears to be a log transformation.
+Another obvious correction would be to include an indicator variable for public institutions back into the model. The scatter plot panel with tuition on the y axis and graduation rate on the x axis is just the same as our motivating scatter plot which compares the same two variables. There is an interaction between tuition and an institution's identity as public or private that can be evidenced graphically. We should model this relationship with the addition of an interaction term.
+
+One more obvious correction would be to add a variable transformations for endowment per FTE. A scatter plot indicates a diminishing relationship between this variable and graduation rates. An appropriate transform for endowment per FTE appears to be a log transformation.
 
 <<transforms,echo=FALSE,fig=TRUE>>=
-qplot(GradRate$Five.Year.Bachelors.Graduation.Rate,log(GradRate$Endowment.Per.FTE.Enrollment),xlab="Graduation Rate", ylab="Log(Endowment Per FTE Enrollment)")
+qplot(GradRate$Five.Year.Bachelors.Graduation.Rate,log(GradRate$Endowment.Per.FTE.Enrollment),xlab="Graduation Rate", ylab="Log(Endowment Per FTE Enrollment)",main="Endowment Per FTE Transformation")
 @
 
-Before making these corrections though, we have one larger problem. There are several indicators that the residuals are not normally distributed, likely due to outliers. A qq plot of the residuals suggests that they are distributed with heavy tails.
+\FloatBarrier
+
+Before making these corrections though, we have one larger problem. There are several indicators that the residuals are not normally distributed, likely due to outliers. A QQ plot of the residuals suggests that they are distributed with heavy tails. We should attempt to correct this by removing outliers.
 
 <<qqplot,echo=FALSE,fig=TRUE>>=
-qplot(sample=grfull$residuals,stat="stat_qq")
+qplot(sample=grfull$residuals,stat="stat_qq",main="QQ plot - Full Model")
 @
+
+\FloatBarrier
 
 \subsection{Outlier Removal}
 
-A histogram of the studentized deleted residuals would suggest that we have several outliers. After calculating the bonferroni critical value for outliers, we can assume that the following observations for five year graduation rate should be removed from the dataset. Note that I have set the $\alpha$ level at $\alpha = 0.10$ for the Bonferroni test.
+A histogram of the studentized deleted residuals would suggest that we have several outliers. After calculating the bonferroni critical value for outliers, we can assume that the following observations for five year graduation rate should be removed from the data set. Note that I have set the $\alpha$ level at $\alpha = 0.10$ for the Bonferroni test.
+
+$$ H_0 \text{: Observation Is Not an Outlier in Response} $$
+$$ H_a \text{: Observation Is an Outlier in Response} $$
+$$ \text{If }t^* > t(1-\frac{\alpha}{\Sexpr{2*length(grfull$model$Mid.East)}},\Sexpr{length(grfull$model$Mid.East) - length(grfull$coefficients)}) = \Sexpr{round(qt(1-0.1/(2*length(grfull$model$Mid.East)),length(grfull$model$Mid.East) - length(grfull$coefficients)),3)} \text{ Reject }H_0 $$
+
+Using this test, we remove the observations in table that follows.
 
 <<residuals,fig=TRUE,results=tex>>=
 library(MASS)
+# find the studentized residuals
 stud.del.res <- studres(grfull)
-qplot(stud.del.res,xlab="Studentized Deleted Residuals",binwidth=0.05)
+# plot a histogram of them
+qplot(stud.del.res,
+      xlab="Studentized Deleted Residuals",
+      binwidth=0.05)
+# set alpha
 alpha <- 0.1
-ct <- qt(1-alpha/(2*length(stud.del.res)),length(stud.del.res) - length(grfull$coefficients))
+# calculate the critical value
+ct <- qt(1-alpha/(2*length(stud.del.res)),
+         length(stud.del.res) - length(grfull$coefficients))
+# find the outliers
 groutliers <- which(abs(stud.del.res) > ct)
-print(xtable(data.frame(Institutions = rownames(GradRate)[which(abs(stud.del.res) > ct)])))
+print(xtable(data.frame(Institutions = rownames(GradRate)[which(abs(stud.del.res) > ct)]),
+             caption="Observations Removeed Due to Outlying Responses"))
 @
 
-The predictor variables also have outliers. We use the hat matrix to find them:
+\FloatBarrier
+
+The predictor variables also have outliers. We use the hat matrix to find them. A table of those removed follows.
 
 <<residualxes,results=tex>>=
+# get the diagonal of the hat matrix
 diagonal <- lm.influence(grfull)$hat
-threshold <- 2*(length(grfull$coefficients) - 1)/length(grfull$model$Five.Year.Bachelors.Graduation.Rate)
+# define the threshold
+threshold <- 2*(length(grfull$coefficients) - 1)/
+  length(grfull$model$Five.Year.Bachelors.Graduation.Rate)
+# find the outliers
 xoutliers <- which(diagonal > threshold)
-print(xtable(data.frame(Institutions = rownames(GradRate)[xoutliers]),))
+print(xtable(data.frame(Institutions = rownames(GradRate)[xoutliers[1:52]],
+                        `Institutions   continued` = rownames(GradRate)[xoutliers[53:104]],
+                        row.names=NULL),
+             caption="Observations Removed Due to Outlying Predictors"))
 @
 
-Now let's remove these from our full model and see if our residuals are more normally distributed.
+\FloatBarrier
 
-<<removeoutliers,results=tex>>=
+Removing outliers in both the response and predictor variables from our full model, the residuals appear much closer to being normally distributed.
+
+<<removeoutliers,results=tex,echo=FALSE>>=
 grfull_nouts <- lm(Five.Year.Bachelors.Graduation.Rate~.,data=GradRate[-c(groutliers,xoutliers),setdiff(names(GradRate),c("SizeSetting.VSmall.FourYear.NotResidential"))])
 grfull_noutssumm <- summary(grfull_nouts)
-print(xtable(grfull_noutssumm,caption=paste0("F = ",round(grfull_noutssumm$fstatistic,4)[1]," (n = ",length(grfull_nouts$model[,1])," on ",grfull_noutssumm$df[2]," degrees of freedom)")))
+#print(xtable(grfull_noutssumm,caption=paste0("F = ",round(grfull_noutssumm$fstatistic,4)[1]," (n = ",length(grfull_nouts$model[,1])," on ",grfull_noutssumm$df[2]," degrees of freedom)")))
 @
 
 <<qqplotnoouts,echo=FALSE,fig=TRUE>>=
-qplot(sample=grfull_nouts$residuals,stat="stat_qq")
+qplot(sample=grfull_nouts$residuals,stat="stat_qq",main="QQ Plot - Outliers Removed")
 @
-
-It appears that our residuals are now normally distributed. Now we can make the apply corrections we noticed necessary in our initial model.
 
 <<addbackprivate,echo=FALSE>>=
 GradRate$Private <- sapply(row.names(GradRate),function(x) {
   want <- as.character(data$HD2011.Control.of.institution[row.names(data) == x])
-  if (want == "Public") {
+  if (want == "Private not-for-profit") {
     return(1L)
   }
   else {
@@ -286,9 +375,11 @@ GradRate$Private <- sapply(row.names(GradRate),function(x) {
 }) 
 @
 
-\subsection{Modeling}
+\FloatBarrier
 
-Now that we have identified outliers in the data, we can estimate the model, incorporating the transformation to endowment per FTE and the interaction of tuition and fees with an institution's status as public or private.
+\subsection{Model Refinement}
+
+Now that we have identified outliers in the data, we can estimate the model, incorporating the transformation to endowment per FTE and the interaction of tuition and fees with an institution's status as public or private. Note that the variable "SizeSetting.VSmall.FourYear.NotResidential" has also been removed from this model due to outlier removal. All institutions with this characteristic have been dropped from the model. A model summary table follows:
 
 <<reduceit,echo=FALSE,results=tex>>=
 GradRate.m <- GradRate[-c(groutliers,xoutliers),setdiff(names(GradRate),c("Tuition.Fees.2009.2010", "First.Time.Certificate.Seeking.Ugrad.Enrollment", "Bachelors.Degrees.Awarded","SizeSetting.VSmall.FourYear.NotResidential"))]
@@ -297,39 +388,83 @@ grredsum <- summary(grred)
 print(xtable(grredsum,caption=paste0("F = ",round(grredsum$fstatistic,4)[1]," (n = ",length(GradRate[,1])," on ",grredsum$df[2]," degrees of freedom)")))
 @
 
-Some coefficients have lost individual significance of thier coefficients. Scaling of the number of first time certificate seeking undergrads aids it's significance, but others are not aided. It may be necessary to remove them from the model. Additionally, computing the VIF statistic again shows that the tuition and fees interaction with public or private status, as well as undegraduate enrollment and first time certificate seeking undergrad enrollment are causing multicollinearity issues. Centering only appears to make the interaction term's contribution to the model's collinearity issues greater according to the VIF statistic, so we will live with that. We will now test if we can remove the first time certificate seeking undegrad enrollment variable.
+\FloatBarrier
 
-<<damnftests>>=
-grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private + I(log(Endowment.Per.FTE.Enrollment)) - Endowment.Per.FTE.Enrollment - First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment,data=GradRate.m)
+Some coefficients have lost the individual significance of their coefficients. Scaling of the number of first time certificate seeking undergrads aids it's significance, but others are not aided. It may be necessary to remove them from the model. Additionally, computing the VIF statistic again shows that the tuition and fees interaction with public or private status, as well as undergraduate enrollment and first time certificate seeking undergrad enrollment cause multico-linearity issues in this model. Centering only appears to make the interaction term's contribution to the model's co-linearity issues greater according to the VIF statistic, so we will live with it in its current form. We will now test if we can remove the first time certificate seeking undergrad enrollment variable, as it would appear not to have an individually significant coefficient.
+
+$$ H_0 \text{: } \beta{}_iFirst.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment = 0 $$
+$$ H_a \text{: } \beta{}_iFirst.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment \neq 0 $$
+$$ \text{If } F^* > F(0.99,1,\Sexpr{length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1]}) = \Sexpr{round(qf(0.99,1,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1]))} \text{ Reject }H_0 $$
+
+<<damnftests,echo=TRUE>>=
+# estimate the reduced model without First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment
+grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~. 
+              + Tuition.Fees.2010.2011*Private 
+              + I(log(Endowment.Per.FTE.Enrollment))
+              - Endowment.Per.FTE.Enrollment
+              - First.Time.Full.Time.Certificate.Seeking.Ugrad.Enrollment,
+              data=GradRate.m)
 grred.rsum <- summary(grred.r)
+# calculate the F statistic
 F_star <- ((deviance(grred.r) - deviance(grred)) /
-             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grred.rsum$df[1]) -
-                (length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1]))) /
-  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1])
-cv <- qf(0.99,1,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1])
+             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+               - grred.rsum$df[1]) -
+                (length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+                 - grredsum$df[1]))) /
+  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+   - grredsum$df[1])
+# also calculate the critical value
+cv <- qf(0.99,1,
+         length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+         -grredsum$df[1])
+# is the test statistic less than the critical value?
 F_star < cv
 @
 
-$F^*$ is greater than the critical value of $\Sexpr{cv}$ so we cannot remove the first time certificate seeking undergrad variable, the next test shows that we can remove all three of the variables endowment per FTE, the percentage that the average student loan is of tuition, and the percent of first time undgrad transfers enrolled.
+$F^*$ is greater than the critical value of $\Sexpr{round(cv,4)}$ so we cannot remove the first time certificate seeking undergrad variable from the model. The next test shows that we can remove all three of the variables endowment per FTE, the percentage that the average student loan is of tuition, and the percent of first time undergrad transfers enrolled.
 
-<<damnftests2>>=
-grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
+$$ H_0 \text{: } \beta{}_{i1},\beta{}_{i2},\beta{}_{i3} = 0 $$
+$$ H_a \text{: } \beta{}_{i1},\beta{}_{i2},\beta{}_{i3} \neq 0 $$
+$$ \text{If } F^* > F(0.99,3,\Sexpr{length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1]}) = \Sexpr{round(qf(0.99,3,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1]),4)} \text{ Reject }H_0 $$
+
+<<damnftests2,echo=TRUE>>=
+# estimate the reduced model
+grred.r <- lm(Five.Year.Bachelors.Graduation.Rate~.
+              + Tuition.Fees.2010.2011*Private
+              - Endowment.Per.FTE.Enrollment
+              - Percent.Average.Student.Loan.Of.Tuition.Ugrad
+              - Percent.First.Time.Transfer.Ugrad.Enrollment,
+              data=GradRate.m)
 grred.rsum <- summary(grred.r)
+# calculate the test statistic F_star
 F_star <- ((deviance(grred.r) - deviance(grred)) /
-             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grred.rsum$df[1]) -
-                (length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1]))) /
-  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate) - grredsum$df[1])
-cv <- qf(0.99,3,length(grred$model$Five.Year.Bachelors.Graduation.Rate)-grredsum$df[1])
+             ((length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+               - grred.rsum$df[1]) -
+                (length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+                 - grredsum$df[1]))) /
+  (deviance(grred)/length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+   - grredsum$df[1])
+# calculate the critical value
+cv <- qf(0.99,3,
+         length(grred$model$Five.Year.Bachelors.Graduation.Rate)
+         -grredsum$df[1])
+# is the test statistic less than the critical value?
 F_star < cv
 @
+
+The test statistic $F^*$ is less than the critical value of $\Sexpr{round(cv,4)}$, so we can safely remove these predictors from the model. 
+
+A summary of the model that results after this final correction follows:
 
 <<finalmodelresults,echo=FALSE,results=tex>>=
 print(xtable(grred.rsum,caption=paste0("F = ",round(grred.rsum$fstatistic,4)[1]," (n = ",length(grred.r$model[,1])," on ",grred.rsum$df[2]," degrees of freedom)")))
 @
 
-We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. The model exhibits heterskedasticity according the Breusch-Pagan test. We can quickly correct for this by using robust regression estimation.
+\FloatBarrier
 
-<<bptest,results=tex>>=
+We still have one more model problem to deal with if we are concerned about using our model for inference - heterskedasticity. Not only is it clear from scatter plots of the residuals versus the response and predictor variables, but the model also exhibits heterskedasticity according the Breusch-Pagan test statistic. Just from the plots, it is clear that most of these problems come from enrollment and investment return variables. Notice the cone shape of the residual plot against these predictors. There is much wider variation in the residuals at lower rather than higher levels for these three variables.
+
+<<bptest,results=tex,echo=FALSE,fig=TRUE,height=6>>=
 library(lmtest)
 bp <- bptest(grred.r)
 bp <- data.frame(`Breusch-Pagan Statistic` = bp$statistic,
@@ -339,26 +474,93 @@ bp <- data.frame(`Breusch-Pagan Statistic` = bp$statistic,
                  row.names=NULL,check.rows=F,check.names=F,stringsAsFactors=F
                  )
 print(xtable(bp))
+
+test <- grred.r$model[setdiff(names(grred.r$model),c("Endowment.Per.FTE.Enrollment",
+                                                     "Percent.Average.Student.Loan.Of.Tuition.Ugrad",
+                                                     "Percent.First.Time.Transfer.Ugrad.Enrollment"))]
+test$residuals <- grred.r$residuals
+test <- melt(test,id.vars="residuals")
+g <- ggplot(aes(value,residuals),data=test)
+g + geom_point(size=1) + facet_wrap(~variable,scales="free_x") + theme(strip.text.x = element_text(size = 4),axis.text.x = element_text(size=4)) + xlab("Predictors") + ggtitle("Visual Heteroskedasticity Evidence")
+
 @
 
-<<robustestimate,results=tex>>=
-robustestimate <- rlm(Five.Year.Bachelors.Graduation.Rate~. + Tuition.Fees.2010.2011*Private - Endowment.Per.FTE.Enrollment - Percent.Average.Student.Loan.Of.Tuition.Ugrad - Percent.First.Time.Transfer.Ugrad.Enrollment,data=GradRate.m)
-robustsumm <- summary(robustestimate)
-print(xtable(robustsumm$coefficients,caption=paste0("Residual Standard Error = ",round(robustsumm$sigma,4)," (n = ",length(robustestimate$model[,1])," on ",robustsumm$df[2]," degrees of freedom)")))
+\FloatBarrier
+
+We can quickly correct for this by producing heteroskedasticity corrected standard errors (HC3 method is used). A table with the new standard errors for each predictor in the model follows. Even after correction of this issue, all but one predictor remains individually significant at at least the $\alpha = 0.1$ level. We will use these corrected standard errors to do prediction and inferencing.
+
+<<robustestimate,results=tex,echo=TRUE>>=
+require("sandwich")
+# get a heteroskedasticity-consistent covariance matrix
+grred.r$newse<-vcovHC(grred.r) #uses HC3 method
+# re-do all the t-tests for each coefficient using the new variance-covariance matrix
+print(xtable(as.table(coeftest(grred.r,grred.r$newse,6)),caption="Coefficient Estimation with Robust Standard Errors"))
 @
 
-\subsection{Intepretation and Inference}
+\FloatBarrier
+
+\subsection{Interpretation}
+
+In light of these new standard errors and t statistics, even if we calculate a Bonferroni critical value, which would be $\Sexpr{round(qt(1-0.95/(2*23),1217),4)}$ at the $\alpha = 0.05$ level, we reach the conclusion that all but one variable is jointly significant. The variable that doesn't remain is an undergrad profile indicator for institutions that are full time, and selective, but have high rates of transfers in. Because of this, we are able to safely make statements about the full set of predictors. A full discussion follows in the results section.
+
+%-------------------------------------------
+\section{Results}
+%-------------------------------------------
+
+\subsection{One-Way ANOVA}
+
+They main point of the one-way ANOVA analysis, notwithstanding the issues with the underlying assumptions of the model, is to show that there are true differences between public and private institutions in terms of five year graduation rate. Even despite the problems with the underlying assumptions, we can make this statement with some confidence - the one-way ANOVA on two groups reduces to a t-test, which is highly invariant to departures from normality. There are many potential explanations for this difference. Public schools generally have larger student bodies and they seem to make it difficult for students to graduate in less than five years due to competition for classroom seats. Private colleges also encompass a large majority of the best institutions in the country. These institutions may be contributing to the differences between the two groups. This same conclusion is buttressed by the regression analysis results where, all other things being equal, just being a private institution raises an institution's predicted graduation rate by 7.3 percentage points. This effect is tempered for private schools though. The model also indicates that a \$1,000 increase in tuition and fees is associated with a 1.2 percentage point increase for public schools, but only a 0.4 percent increase for private schools.
+
+\subsection{Two-Way ANOVA}
+
+The two-way ANOVA analysis we should have less confidence in than the one-way version. Unlike the one way version, it does not reduce to a t-test, so we should be wary of the results. If for some reason the results of the analysis were true though, we could note that the relationship between public and private status and graduation rates is not a simple as suggested by the one-way ANOVA analysis. Even at similar levels of selectivity and undergraduate program type, there are still differences in graduation rate as evidenced by a significant F-test for the within group effects for the model. These results are somewhat confirmed by regression analysis. Several of the Carnegie undergraduate program indicators made it into the model, though it appears that only those indicating highly selective institutions when few part-time students were contributory to the model. With the exception of an indicator for selective medium part-time institutions, one would expect the coefficients, as they are for these variables, to be positively correlated with graduation rates. Though no interactions with the private school indicator made it into the model, a prediction for a similarly selective public institution would still be much lower than for a private school because of the primary indicator variable in the model.
+
+\subsection{Regression Analysis}
+
+The regression analysis shows, in a much clearer fashion than the ANOVA analyses, the effect of tuition and fees on graduation rates. After controlling for the selectivity of an institution using Carnegie undergraduate profile variables, for indicators for size and setting that is largely not residential, for degree of urbanization, enrollment, and other variables which we will discuss in brief, tuition and fees appears to have a tempered effect on graduation rates compared to our motivating scatter plot. Every \$1,000 increase in tuition at a public school is associated with a 0.4 percentage increase in graduation rates, while at a public school it is associated with a 1.2 percentage point increase. This seems to say that controlling for other factors, to find a school with good graduation rates, be more willing to pay more for it if it is a public school. This is likely a result of the fact that some of the most prestigious and selective public schools in the country are also the most expensive.
+
+Another interesting effect indicated by the regression model is the relationship between male and female admission yields and graduation rates. After controlling for tuition, selectivity and a host of other factors, as the percentage yield of men gets lower than the percentage yield women, there are huge positive effects on graduation rates (the coefficient is slightly misleading: calculated by subtracting the female admission yeild from male admission yield). This seems to suggest that an institution more acceptable to women than men, is good for graduation rates, but there are likely more factors at play.
+
+An assistant professor's proportion of a full professor's salary also seems to have a significant effect on graduation rates. Oddly enough, as this proportion increases, expected graduation rates decreases.
+
+Two more factors that we found to have interesting associations with graduation rates - retention rates and the percentage of students receiving Pell grants. The positive, and large relationship between retention rates and graduation rates suggests that schools that students stay at are likely to have high graduation rates. While this doesn't lend itself to policy prescriptives since this is largely driven by student transfers, not any inherent educational prescriptive, it would guide an individual college seeker. Places that other students stay at will likely have a high associated five year graduation rate and provide expedient education. 
+
+The relationship between Pell grants and graduation rates is interesting in that it may partial confirm our model. Pell grants are only available for four year periods, so you would expect that institutions where student's have them at a high rate would have to do a better job of affording their student's an education in less than 5 years. In other words, one would expect a negative relationship between Pell grant recipients and graduation rates. As it turns out, our model predicts a negative relationship between these two variables - partially confirming the results.
+
+One last conclusion to be had from the model is that there is a strong negative relationship between large student body size and graduation rates. It appears that big schools are not very efficient educations. This could have some policy prescriptions - simply don't have huge, monolithic educational institutions and graduation rates may rise. Of course, there must be a diminishing effect and a most efficient size, but our model, as currently formulated, does not allow for any analysis of the optimum in the face of those effects.
 
 %-------------------------------------------
 \section{Conclusion}
 %-------------------------------------------
 
-%-------------------------------------------
-\section{References}
-%-------------------------------------------
+Graduation rates have many determinants. Most clearly, the selectivity of an institution, the institution's public/private status, and tuition are most closely associated with variation in rates, but other factors are surprisingly related. Though the regression model hints at a few causal mechanisms (may there be something to the male, female admission yield differential), this model is inadequate for addressing the causal mechanism behind graduation rates. One cannot simply assume that an institution's status as a public institution causes it to have a lower graduation rate - rather there may be something about the nature of the students who attend, plus the institution itself that generates a particular graduation rate. More granular data, potentially at the student level, would allow for such an analysis.
 
 %-------------------------------------------
-\section{Appendix}
+\section{Software References}
 %-------------------------------------------
+
+\begin{enumerate}[1)]
+\item Achim Zeileis, Torsten Hothorn (2002). Diagnostic Checking in Regression Relationships. R News 2(3), 7-10.
+\indent URL: http://CRAN.R-project.org/doc/Rnews/
+\item Venables, W. N. \& Ripley, B. D. (2002) Modern Applied Statistics with S. Fourth Edition. Springer, New York. ISBN 0-387-95457-0
+\item John Fox and Sanford Weisberg (2011). An {R} Companion to Applied Regression, Second Edition. Thousand Oaks CA: Sage. 
+\indent URL: http://socserv.socsci.mcmaster.ca/jfox/Books/Companion
+\item David B. Dahl (2013). xtable: Export tables to LaTeX or HTML. R package version 1.7-1. 
+\indent http://CRAN.R-project.org/package=xtable
+\item Sanford Weisberg (2005). Applied Linear Regression, Third Edition. Hoboken NJ: Wiley. 
+\indent URL: http://www.stat.umn.edu/alr
+\item Hadley Wickham (2007). Reshaping Data with the reshape Package. Journal of Statistical Software, 21(12), 1-20. 
+\indent URL http://www.jstatsoft.org/v21/i12/.
+\item H. Wickham. ggplot2: elegant graphics for data analysis. Springer New York, 2009.
+\item Thomas Lumley using Fortran code by Alan Miller (2009). leaps: regression subset selection. R package version 2.9. 
+\indent http://CRAN.R-project.org/package=leaps
+\item Achim Zeileis (2004). Econometric Computing with HC and HAC Covariance Matrix Estimators. Journal of Statistical Software 11(10), 1-17. 
+\indent URL http://www.jstatsoft.org/v11/i10/.
+\item Yihui Xie (2013). knitr: A general-purpose package for dynamic report generation in R. R package version 1.4.1.
+\item Yihui Xie (2013) Dynamic Documents with R and knitr. Chapman and Hall/CRC. ISBN 978-1482203530
+\item Yihui Xie (2013) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich Leisch and Roger D. Peng, editors, Implementing Reproducible Computational Research. Chapman and Hall/CRC. ISBN 978-1466561595
+\item R Core Team (2013). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. 
+\indent URL http://www.R-project.org/.
+\end{enumerate}
 
 \end{document}
