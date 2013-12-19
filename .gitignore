@@ -1,8 +1,8 @@
 .Rproj.user
 .Rhistory
 .RData
-*.log
-*.gz
-*.tex
-*.toc
+.log
+.gz
+.tex
+.toc
 .pdf
